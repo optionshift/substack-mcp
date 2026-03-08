@@ -1,7 +1,7 @@
 # Progress Log: substack-mcp
 
-## Status: Scaffolding
-**Last Updated:** 2026-03-07
+## Status: Sprint 1 APPROVED
+**Last Updated:** 2026-03-08
 
 ---
 
@@ -100,3 +100,13 @@
 6. **SKIPPED** — Duplicate `get_client()` wrapper in tool files. Intentional for test mocking (`unittest.mock.patch` targets).
 7. **FIXED** — Added test for non-401 HTTP error codes (500) in auth — `test_server_error_returns_unknown`.
 8. **FIXED** — Added tests for `create_client()` env var wiring — `test_create_client_with_env_var`, `test_create_client_without_env_var`.
+
+---
+
+## Sprint 1 Summary
+
+**APPROVED** — 2026-03-08
+**Total tests:** 48 passing, 0 failing
+**Batches completed:** 1-4 (Scaffold, Auth, Subscriptions, Dedup Cache)
+**Sprint review:** 8 findings total → 7 fixed, 1 skipped (intentional design)
+**Final gate:** PASS (all 4 criteria verified by code-review agent)
