@@ -1,0 +1,101 @@
+# CLAUDE.md — substack-mcp (ss-navigator)
+
+## Project Overview
+Remote MCP server for Substack content ingestion. Python 3.12+ on Fly.io with StreamableHTTP transport.
+Consumed by Perplexity Computer and Claude Cowork scheduled tasks.
+
+## Tech Stack
+- Python 3.12+, `mcp[server]` (FastMCP), `httpx`, `google-genai`, `markdownify`
+- SQLite3 on Fly Volume for dedup cache
+- pytest + pytest-asyncio for testing
+- Fly.io deployment (LAX region)
+
+## Architecture Patterns
+- **Navigator START tool** — `ss_navigator` must be the first tool clients call
+- **Server-side dedup** — SQLite `seen_articles` table, server owns all state
+- **Server-side summarization** — Gemini Flash-Lite, optional param, graceful fallback
+- **Standard error shape** — `{ error, code, message, retry_after }`
+- **Cookie auth** — `substack.sid` / `connect.sid`, expiry: months (per D012, not ~30 days as originally spec'd)
+
+## Development Rules
+
+### Agent Teams (MANDATORY)
+- Use agent teams for all multi-file changes, investigations, and reviews
+- Launch review agents. When they report back, DO NOT present findings yet. First, re-read every cited file and verify each finding is real. Remove any finding you can't confirm with actual code. Then present only verified findings.
+- Every finding from parallel agents must include (a) exact file path and line number, (b) a direct quote of the problematic code, (c) why it's wrong with concrete evidence not assumptions
+- After all agents report, launch a Verification Agent that reads every cited file+line and produces a filtered report keeping only findings where the evidence actually supports the claim
+
+### Caching (MANDATORY)
+- All feed tools MUST check SQLite dedup cache before returning articles
+- Cache insertions happen server-side, never delegated to clients
+- Use `seen_articles` table with indexed lookups by post ID
+- Dedup logic: check by ID → if exists, skip → if new, insert and return
+
+### Test-Driven Development (MANDATORY)
+- Write tests BEFORE implementation code
+- Every tool must have unit tests with mocked HTTP responses
+- Dedup behavior must be tested (insert, lookup, skip)
+- Summarization must be tested (success, failure/fallback)
+- Auth must be tested (valid, expired, missing)
+- Target: 100+ tests (per D011, benchmarking memory-mcp's 131)
+- Run full test suite before every commit — zero regressions allowed
+
+### Spec-Driven Development (MANDATORY)
+- All implementation must trace back to PRD.md requirements
+- No speculative changes or optimizations not in the spec
+- Before committing, verify each change maps to a specific PRD requirement
+
+### Code Review
+When running code review agents or parallel investigation agents, always verify findings against actual source code before reporting. Flag confidence level on each finding. Never report a finding without confirming it in the codebase.
+
+### Git Workflow
+- Before committing code changes, run `git diff --staged` and verify only intended files are included
+- Never amend commits without checking for unrelated staged files first
+- Atomic commits — one logical change per commit
+- Before EVERY commit: (1) Run full type-check and test suite — zero regressions, (2) Git diff staged changes and verify ONLY files from current batch, (3) Verify each change maps to a specific PRD requirement
+
+### Deployment
+- When deploying to Fly.io, always explicitly confirm the deploy was executed and verify it's live
+- After deploying: (1) `fly status` to confirm, (2) Hit health endpoint and show response, (3) Run smoke test against production
+- Don't mark deploy as done until all 3 pass
+- Never assume merging or local verification equals deployment
+
+## Key Files
+- `docs/PRD.md` — Product requirements document
+- `docs/PROGRESS.md` — Batch progress tracking
+- `docs/DECISIONS.md` — Architecture decision log
+- `shortwave-mcp-spec.md` — Original spec (reference only)
+- `substack-feeds.txt` — OPML export of 57 subscriptions
+
+### Planned Structure (to be created during implementation)
+- `src/server.py` — MCP server entry point
+- `src/substack_client.py` — Substack API client (httpx)
+- `src/dedup.py` — SQLite dedup cache
+- `src/summarizer.py` — Gemini Flash-Lite summarization
+- `src/tools/` — Tool implementations
+- `tests/` — pytest test suite
+
+## API Endpoints (Substack — Undocumented, Verified March 2026)
+- `GET /api/v1/user/profile/self` — Auth check (NOT /user/me)
+- `GET /api/v1/reader/feed` — FYP feed (UNVERIFIED, may be /comment/feed with tabId)
+- `GET /api/v1/reader/feed?filter=subscription` — Subscription feed (NEEDS LIVE TEST)
+- `GET /api/v1/subscriptions` — List subscriptions (publication-scoped domain)
+- `GET /api/v1/notes?cursor={cursor}` — Notes feed (NOT /reader/notes/feed)
+- `GET /api/v1/reader/feed/profile/{user_id}?types[]=like` — Likes (CONFIRMED)
+- `GET /api/v1/reader/feed/profile/{user_id}?types[]=restack` — Restacks (CONFIRMED)
+- `GET /api/v1/posts/{slug}` — Single post (per-publication subdomain)
+- `GET /api/v1/publication/search?query={q}` — Publication search (CONFIRMED, no auth)
+- `GET /api/v1/archive` — Publication post archive (paginated, CONFIRMED)
+- `POST /api/v1/comment/feed` — Notes posting (tabId: "for-you")
+
+### Endpoint Verification Status
+CONFIRMED: publication/search, subscriptions, likes, restacks, archive
+WRONG PATH (corrected above): user/me → user/profile/self, reader/notes/feed → notes
+UNVERIFIED (need live testing): reader/feed (FYP), reader/feed?filter=subscription
+Cookie expiry: MONTHS (not 30 days as originally spec'd)
+
+## Environment Variables
+- `SUBSTACK_SESSION_COOKIE` — Substack session cookie value
+- `GOOGLE_AI_API_KEY` — Gemini Flash-Lite API key
+- `MCP_AUTH_TOKEN` — Shared secret for MCP client auth
+- `SQLITE_PATH` — Path to SQLite db (default: `/data/ss_navigator.db`)

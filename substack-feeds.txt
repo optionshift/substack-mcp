@@ -1,0 +1,57 @@
+<opml version='2.0'><body><outline text="Substack"><outline type="rss" text="On Substack" htmlUrl="https://on.substack.com" xmlUrl="https://on.substack.com/feed"/>
+<outline type="rss" text="Simon Owens's Media Newsletter" htmlUrl="https://simonowens.substack.com" xmlUrl="https://simonowens.substack.com/feed"/>
+<outline type="rss" text="cdixon" htmlUrl="https://cdixon.substack.com" xmlUrl="https://cdixon.substack.com/feed"/>
+<outline type="rss" text="Lenny's Newsletter" htmlUrl="https://www.lennysnewsletter.com" xmlUrl="https://www.lennysnewsletter.com/feed"/>
+<outline type="rss" text="a16z" htmlUrl="https://www.a16z.news" xmlUrl="https://www.a16z.news/feed"/>
+<outline type="rss" text="The GTMnow Newsletter (by GTMfund) " htmlUrl="https://thegtmnewsletter.substack.com" xmlUrl="https://thegtmnewsletter.substack.com/feed"/>
+<outline type="rss" text="The Pragmatic Engineer" htmlUrl="https://newsletter.pragmaticengineer.com" xmlUrl="https://newsletter.pragmaticengineer.com/feed"/>
+<outline type="rss" text="Product Market Fit" htmlUrl="https://www.productmarketfit.tech" xmlUrl="https://www.productmarketfit.tech/feed"/>
+<outline type="rss" text="The API Economy" htmlUrl="https://www.apifirst.tech" xmlUrl="https://www.apifirst.tech/feed"/>
+<outline type="rss" text="The Substack Post" htmlUrl="https://post.substack.com" xmlUrl="https://post.substack.com/feed"/>
+<outline type="rss" text="Outbound Kitchen" htmlUrl="https://newsletter.outbound.kitchen" xmlUrl="https://newsletter.outbound.kitchen/feed"/>
+<outline type="rss" text="a16z crypto" htmlUrl="https://a16zcrypto.substack.com" xmlUrl="https://a16zcrypto.substack.com/feed"/>
+<outline type="rss" text="The Product Compass" htmlUrl="https://www.productcompass.pm" xmlUrl="https://www.productcompass.pm/feed"/>
+<outline type="rss" text="Prospecting from the Trenches" htmlUrl="https://salesflo.substack.com" xmlUrl="https://salesflo.substack.com/feed"/>
+<outline type="rss" text="Latent.Space" htmlUrl="https://www.latent.space" xmlUrl="https://www.latent.space/feed"/>
+<outline type="rss" text="One Useful Thing" htmlUrl="https://www.oneusefulthing.org" xmlUrl="https://www.oneusefulthing.org/feed"/>
+<outline type="rss" text="OnlyCFO's Newsletter" htmlUrl="https://www.onlycfo.io" xmlUrl="https://www.onlycfo.io/feed"/>
+<outline type="rss" text="Nate’s Substack" htmlUrl="https://natesnewsletter.substack.com" xmlUrl="https://natesnewsletter.substack.com/feed"/>
+<outline type="rss" text="Marc Andreessen Substack" htmlUrl="https://pmarca.substack.com" xmlUrl="https://pmarca.substack.com/feed"/>
+<outline type="rss" text="Decoding AI Magazine" htmlUrl="https://www.decodingai.com" xmlUrl="https://www.decodingai.com/feed"/>
+<outline type="rss" text="Venture Curator " htmlUrl="https://theventurecrew.substack.com" xmlUrl="https://theventurecrew.substack.com/feed"/>
+<outline type="rss" text="Dan Hock's Essays" htmlUrl="https://www.danhock.co" xmlUrl="https://www.danhock.co/feed"/>
+<outline type="rss" text="a16z speedrun" htmlUrl="https://speedrun.substack.com" xmlUrl="https://speedrun.substack.com/feed"/>
+<outline type="rss" text="Alex McFarland" htmlUrl="https://alexmcfarland.substack.com" xmlUrl="https://alexmcfarland.substack.com/feed"/>
+<outline type="rss" text="20VC" htmlUrl="https://20vc.substack.com" xmlUrl="https://20vc.substack.com/feed"/>
+<outline type="rss" text="Fund Momentum: New Fresh Capital Ready to Deploy" htmlUrl="https://seedraisr.substack.com" xmlUrl="https://seedraisr.substack.com/feed"/>
+<outline type="rss" text="The VC Corner" htmlUrl="https://www.thevccorner.com" xmlUrl="https://www.thevccorner.com/feed"/>
+<outline type="rss" text="@andrewchen" htmlUrl="https://andrewchen.substack.com" xmlUrl="https://andrewchen.substack.com/feed"/>
+<outline type="rss" text="Founder's GTM 🦊" htmlUrl="https://www.foundersgtm.com" xmlUrl="https://www.foundersgtm.com/feed"/>
+<outline type="rss" text="The Revenue Leadership Podcast" htmlUrl="https://www.therevenueleadershippodcast.com" xmlUrl="https://www.therevenueleadershippodcast.com/feed"/>
+<outline type="rss" text="Polymath Investor" htmlUrl="https://www.polymathinvestor.com" xmlUrl="https://www.polymathinvestor.com/feed"/>
+<outline type="rss" text="Deep Writing" htmlUrl="https://newsletter.deepwriting.ai" xmlUrl="https://newsletter.deepwriting.ai/feed"/>
+<outline type="rss" text="The Founders Corner®" htmlUrl="https://www.the-founders-corner.com" xmlUrl="https://www.the-founders-corner.com/feed"/>
+<outline type="rss" text="New Renaissance Notes" htmlUrl="https://nrventures.substack.com" xmlUrl="https://nrventures.substack.com/feed"/>
+<outline type="rss" text="Unpromptable." htmlUrl="https://unpromptable.substack.com" xmlUrl="https://unpromptable.substack.com/feed"/>
+<outline type="rss" text="Founder's Secret Sauce: Code & Copy Tactics" htmlUrl="https://endash.substack.com" xmlUrl="https://endash.substack.com/feed"/>
+<outline type="rss" text="This Week in AI" htmlUrl="https://thisweekinaiclub.substack.com" xmlUrl="https://thisweekinaiclub.substack.com/feed"/>
+<outline type="rss" text="Cannonball GTM" htmlUrl="https://cannonballgtm.substack.com" xmlUrl="https://cannonballgtm.substack.com/feed"/>
+<outline type="rss" text="Underpriced Actions" htmlUrl="https://garyvee.substack.com" xmlUrl="https://garyvee.substack.com/feed"/>
+<outline type="rss" text="the song you skipped" htmlUrl="https://outoflikes.substack.com" xmlUrl="https://outoflikes.substack.com/feed"/>
+<outline type="rss" text="AI MARKET FIT" htmlUrl="https://www.theaiopportunities.com" xmlUrl="https://www.theaiopportunities.com/feed"/>
+<outline type="rss" text="How to AI" htmlUrl="https://ruben.substack.com" xmlUrl="https://ruben.substack.com/feed"/>
+<outline type="rss" text="AI-native GTM" htmlUrl="https://ainativegtm.substack.com" xmlUrl="https://ainativegtm.substack.com/feed"/>
+<outline type="rss" text="Startup Digest" htmlUrl="https://thestartupdigests.substack.com" xmlUrl="https://thestartupdigests.substack.com/feed"/>
+<outline type="rss" text="The Unstuck Entrepreneur" htmlUrl="https://unstuckentrepreneur.substack.com" xmlUrl="https://unstuckentrepreneur.substack.com/feed"/>
+<outline type="rss" text="a16z Growth Newsletter" htmlUrl="https://a16zgrowth.substack.com" xmlUrl="https://a16zgrowth.substack.com/feed"/>
+<outline type="rss" text="Limited Edition Jonathan" htmlUrl="https://limitededitionjonathan.substack.com" xmlUrl="https://limitededitionjonathan.substack.com/feed"/>
+<outline type="rss" text="Agentic AI Weekly" htmlUrl="https://berkeleyrdi.substack.com" xmlUrl="https://berkeleyrdi.substack.com/feed"/>
+<outline type="rss" text="ai market memo" htmlUrl="https://aimarketmemo.substack.com" xmlUrl="https://aimarketmemo.substack.com/feed"/>
+<outline type="rss" text="SemiAnalysis" htmlUrl="https://newsletter.semianalysis.com" xmlUrl="https://newsletter.semianalysis.com/feed"/>
+<outline type="rss" text="Fidji Simo" htmlUrl="https://fidjisimo.substack.com" xmlUrl="https://fidjisimo.substack.com/feed"/>
+<outline type="rss" text="Veri" htmlUrl="https://joinveri.substack.com" xmlUrl="https://joinveri.substack.com/feed"/>
+<outline type="rss" text="Susan | Angel Investor" htmlUrl="https://susanjmontgomery.substack.com" xmlUrl="https://susanjmontgomery.substack.com/feed"/>
+<outline type="rss" text="You Visible" htmlUrl="https://youvisible.substack.com" xmlUrl="https://youvisible.substack.com/feed"/>
+<outline type="rss" text="The AI Corner" htmlUrl="https://www.the-ai-corner.com" xmlUrl="https://www.the-ai-corner.com/feed"/>
+<outline type="rss" text="VC MARKET FIT" htmlUrl="https://vcmarketfit.substack.com" xmlUrl="https://vcmarketfit.substack.com/feed"/>
+<outline type="rss" text="augmented things" htmlUrl="https://augmentedthings.substack.com" xmlUrl="https://augmentedthings.substack.com/feed"/></outline></body></opml>
