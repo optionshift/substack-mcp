@@ -28,11 +28,11 @@
 - [x] Updated PRD + CLAUDE.md with corrected endpoints
 - [x] Added decisions D009-D013 (StreamableHTTP, migrations, test target, endpoint corrections, RSS fallback)
 
-### Pending
-- [ ] Create pyproject.toml with dependencies
-- [ ] Implement Batch 1 (server scaffold + StreamableHTTP transport)
-- [ ] Begin TDD cycle
-- [ ] Live-test unverified FYP endpoint (`/api/v1/reader/feed` vs `/api/v1/comment/feed`)
+### Pending (from Session 1 — completed in Sprints 1-3)
+- [x] Create pyproject.toml with dependencies (Batch 1)
+- [x] Implement Batch 1 (server scaffold + StreamableHTTP transport)
+- [x] Begin TDD cycle (Sprint 1)
+- [ ] Live-test unverified FYP endpoint (`/api/v1/reader/feed` vs `/api/v1/comment/feed`) — still pending
 
 ### Findings from MCP Server Pattern Review (3 agents)
 
