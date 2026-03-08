@@ -180,3 +180,34 @@ Each decision includes: Context → Decision → Rationale → Alternatives Cons
 - Can serve as fallback if session cookie expires before rotation
 - RSS cannot access Notes, likes, restacks, or FYP — so it's a fallback, not a replacement
 **Alternatives:** API-only (breaks on auth failure), scraping (fragile)
+
+---
+
+## D014: HAR Analysis — Endpoint Corrections (March 2026)
+**Date:** 2026-03-08
+**Context:** User captured two HAR files from live substack.com browsing sessions. Analysis revealed 6 critical discrepancies between our implementation and real API behavior.
+**Decision:** Correct all verified endpoints and response parsing based on HAR evidence.
+**Corrections:**
+| Issue | Before | After (HAR-verified) |
+|---|---|---|
+| FYP feed params | `GET /api/v1/reader/feed` (no params) | `GET /api/v1/reader/feed?tab=for-you&type=base` |
+| FYP response shape | `{ "posts": [...] }` | `{ "items": [{ "entity_key", "type", "post", "comment", "context" }] }` |
+| Subscription feed params | `?filter=subscription` | `?tab=subscribed&type=secondary` |
+| Subscription feed response | Same `posts` shape | Same `items` shape as FYP |
+| Subscriptions endpoint | `/api/v1/subscriptions` (301 redirect) | `/api/v1/subscriptions/page` (direct) |
+| Subscriptions response | Flat array `[{ "publication": {...} }]` | `{ "subscriptions": [...], "publications": [...] }` (join by publication_id) |
+| Cookie auth | Both `substack.sid` and `connect.sid` | Only `substack.sid` needed |
+| httpx redirects | Not following 301s | `follow_redirects=True` added |
+**Still unverified (kept as-is):**
+- Auth endpoint `/api/v1/user/profile/self` — not seen in HAR (browser uses `/api/v1/user/{id}-{handle}/public_profile/self`), but sourced from python-substack library. May work; needs live test.
+- Notes endpoint `/api/v1/notes` — not hit in HAR (notes appear inline in reader/feed as `type: "comment"`). May work as standalone; needs live test.
+**New discoveries from HAR (not implemented, for future reference):**
+- `GET /api/v1/posts/by-id/{postId}` — fetch post by numeric ID (no subdomain needed)
+- `GET /api/v1/reader/posts?inboxType={paid|saved|seen}` — filtered reading lists
+- `GET /api/v1/inbox/top` — reading queue with offset pagination
+- `GET /api/v1/search/explore/web` — discover/explore feed
+- `GET /api/v1/activity/unread` — lightweight auth validation
+- Feed pagination uses base64-encoded opaque cursors
+- Cookie expiry confirmed: ~90 days (set March 7, expires June 5)
+- User ID: `383926424`, handle: `mileslozano`
+**Rationale:** HAR captures are ground truth — they show exactly what the real Substack frontend sends. These corrections prevent guaranteed 404s and empty-response bugs in production.

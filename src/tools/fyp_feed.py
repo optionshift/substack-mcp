@@ -59,7 +59,9 @@ async def get_fyp_feed(
     cache = get_cache()
 
     try:
-        response = await client.get(FYP_ENDPOINT)
+        response = await client.get(
+            FYP_ENDPOINT, params={"tab": "for-you", "type": "base"}
+        )
     except httpx.ConnectError:
         return {
             "error": True,
@@ -92,7 +94,7 @@ async def get_fyp_feed(
         }
 
     data = response.json()
-    posts = data.get("posts", [])
+    items = data.get("items", [])
     articles = []
 
     since_dt = None
@@ -102,9 +104,14 @@ async def get_fyp_feed(
         except ValueError:
             pass
 
-    for post in posts:
+    for item in items:
         if len(articles) >= limit:
             break
+
+        # FYP mixes posts and notes — only process posts
+        post = item.get("post")
+        if post is None:
+            continue
 
         parsed = _parse_article(post)
         article_id = f"substack_post_{parsed['post_id']}"

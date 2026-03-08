@@ -4,41 +4,66 @@ import httpx
 
 
 MOCK_FYP_RESPONSE = {
-    "posts": [
+    "items": [
         {
-            "id": 1001,
-            "title": "AI Agents Are the Future",
-            "slug": "ai-agents-future",
-            "post_date": "2026-03-06T10:00:00Z",
-            "publishedBylines": [{"name": "Test Author"}],
-            "publication": {"name": "Tech Blog", "subdomain": "techblog"},
-            "canonical_url": "https://techblog.substack.com/p/ai-agents-future",
-            "body_html": "<p>Article content here</p>",
+            "entity_key": "p-1001",
+            "type": "post",
+            "post": {
+                "id": 1001,
+                "title": "AI Agents Are the Future",
+                "slug": "ai-agents-future",
+                "post_date": "2026-03-06T10:00:00Z",
+                "publishedBylines": [{"name": "Test Author"}],
+                "publication": {"name": "Tech Blog", "subdomain": "techblog"},
+                "canonical_url": "https://techblog.substack.com/p/ai-agents-future",
+                "body_html": "<p>Article content here</p>",
+            },
+            "comment": None,
+            "context": {"type": "post", "typeBucket": "posts"},
         },
         {
-            "id": 1002,
-            "title": "Creator Economy 2026",
-            "slug": "creator-economy-2026",
-            "post_date": "2026-03-05T08:00:00Z",
-            "publishedBylines": [{"name": "Another Author"}],
-            "publication": {"name": "Creator Weekly", "subdomain": "creatorweekly"},
-            "canonical_url": "https://creatorweekly.substack.com/p/creator-economy-2026",
-            "body_html": "<p>More content</p>",
+            "entity_key": "p-1002",
+            "type": "post",
+            "post": {
+                "id": 1002,
+                "title": "Creator Economy 2026",
+                "slug": "creator-economy-2026",
+                "post_date": "2026-03-05T08:00:00Z",
+                "publishedBylines": [{"name": "Another Author"}],
+                "publication": {"name": "Creator Weekly", "subdomain": "creatorweekly"},
+                "canonical_url": "https://creatorweekly.substack.com/p/creator-economy-2026",
+                "body_html": "<p>More content</p>",
+            },
+            "comment": None,
+            "context": {"type": "post", "typeBucket": "posts"},
+        },
+        {
+            "entity_key": "c-9999",
+            "type": "comment",
+            "post": None,
+            "comment": {"id": 9999, "body": "A note in the feed"},
+            "context": {"type": "note", "typeBucket": "notes"},
         },
     ],
 }
 
 MOCK_FYP_PAGE2 = {
-    "posts": [
+    "items": [
         {
-            "id": 1003,
-            "title": "Page 2 Article",
-            "slug": "page-2-article",
-            "post_date": "2026-03-04T06:00:00Z",
-            "publishedBylines": [{"name": "Page2 Author"}],
-            "publication": {"name": "Page2 Pub", "subdomain": "page2pub"},
-            "canonical_url": "https://page2pub.substack.com/p/page-2-article",
-            "body_html": "<p>Page 2 content</p>",
+            "entity_key": "p-1003",
+            "type": "post",
+            "post": {
+                "id": 1003,
+                "title": "Page 2 Article",
+                "slug": "page-2-article",
+                "post_date": "2026-03-04T06:00:00Z",
+                "publishedBylines": [{"name": "Page2 Author"}],
+                "publication": {"name": "Page2 Pub", "subdomain": "page2pub"},
+                "canonical_url": "https://page2pub.substack.com/p/page-2-article",
+                "body_html": "<p>Page 2 content</p>",
+            },
+            "comment": None,
+            "context": {"type": "post", "typeBucket": "posts"},
         },
     ],
 }
@@ -265,7 +290,7 @@ class TestFYPFeedEmpty:
         cache = DedupCache(":memory:")
         mock_response = httpx.Response(
             200,
-            json={"posts": []},
+            json={"items": []},
             request=httpx.Request("GET", "https://substack.com/api/v1/reader/feed"),
         )
 

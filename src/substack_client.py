@@ -17,7 +17,6 @@ class SubstackClient:
     def get_cookies(self) -> dict[str, str]:
         return {
             "substack.sid": self.session_cookie,
-            "connect.sid": self.session_cookie,
         }
 
     async def get(self, path: str, **kwargs) -> httpx.Response:
@@ -27,6 +26,7 @@ class SubstackClient:
         async with httpx.AsyncClient(
             base_url=BASE_URL,
             cookies=self.get_cookies(),
+            follow_redirects=True,
         ) as http:
             response = await http.get(path, **kwargs)
             await response.aread()

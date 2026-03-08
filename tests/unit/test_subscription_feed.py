@@ -4,26 +4,38 @@ import httpx
 
 
 MOCK_SUB_RESPONSE = {
-    "posts": [
+    "items": [
         {
-            "id": 2001,
-            "title": "Subscription Article 1",
-            "slug": "sub-article-1",
-            "post_date": "2026-03-06T10:00:00Z",
-            "publishedBylines": [{"name": "Sub Author"}],
-            "publication": {"name": "Sub Pub", "subdomain": "subpub"},
-            "canonical_url": "https://subpub.substack.com/p/sub-article-1",
-            "body_html": "<p>Subscription content</p>",
+            "entity_key": "p-2001",
+            "type": "post",
+            "post": {
+                "id": 2001,
+                "title": "Subscription Article 1",
+                "slug": "sub-article-1",
+                "post_date": "2026-03-06T10:00:00Z",
+                "publishedBylines": [{"name": "Sub Author"}],
+                "publication": {"name": "Sub Pub", "subdomain": "subpub"},
+                "canonical_url": "https://subpub.substack.com/p/sub-article-1",
+                "body_html": "<p>Subscription content</p>",
+            },
+            "comment": None,
+            "context": {"type": "post", "typeBucket": "posts"},
         },
         {
-            "id": 2002,
-            "title": "Subscription Article 2",
-            "slug": "sub-article-2",
-            "post_date": "2026-03-05T08:00:00Z",
-            "publishedBylines": [{"name": "Sub Author 2"}],
-            "publication": {"name": "Sub Pub 2", "subdomain": "subpub2"},
-            "canonical_url": "https://subpub2.substack.com/p/sub-article-2",
-            "body_html": "<p>More subscription content</p>",
+            "entity_key": "p-2002",
+            "type": "post",
+            "post": {
+                "id": 2002,
+                "title": "Subscription Article 2",
+                "slug": "sub-article-2",
+                "post_date": "2026-03-05T08:00:00Z",
+                "publishedBylines": [{"name": "Sub Author 2"}],
+                "publication": {"name": "Sub Pub 2", "subdomain": "subpub2"},
+                "canonical_url": "https://subpub2.substack.com/p/sub-article-2",
+                "body_html": "<p>More subscription content</p>",
+            },
+            "comment": None,
+            "context": {"type": "post", "typeBucket": "posts"},
         },
     ],
 }
@@ -241,7 +253,7 @@ class TestSubscriptionFeedEmpty:
         cache = DedupCache(":memory:")
         mock_response = httpx.Response(
             200,
-            json={"posts": []},
+            json={"items": []},
             request=httpx.Request("GET", "https://substack.com/api/v1/reader/feed?filter=subscription"),
         )
 

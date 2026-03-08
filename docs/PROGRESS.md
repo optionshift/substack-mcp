@@ -135,3 +135,41 @@
 **Final gate:** PASS (all 6 criteria verified by code-review agent)
 **Files created:** 16 (8 source, 8 test)
 **Tools registered:** All 10 tools registered in server.py with `@mcp.tool()` decorators
+
+---
+
+## HAR Analysis Review — March 8, 2026
+
+### Source
+User captured two HAR files from live substack.com browsing:
+- `substack.com.har` — initial navigation (feeds, subscriptions, profile)
+- `substack.com-additional-clicks-and-nav.har.har` — deeper navigation (inbox, explore, publisher dashboard)
+
+### Critical Fixes Applied (D014)
+
+| # | Fix | Files Changed |
+|---|---|---|
+| 1 | FYP feed: added `tab=for-you&type=base` params | `src/tools/fyp_feed.py`, `tests/unit/test_fyp_feed.py` |
+| 2 | FYP/sub feed: changed response parsing from `posts[]` to `items[].post` | `src/tools/fyp_feed.py`, `src/tools/subscription_feed.py` + tests |
+| 3 | Subscription feed: fixed params from `filter=subscription` to `tab=subscribed&type=secondary` | `src/tools/subscription_feed.py`, `tests/unit/test_subscription_feed.py` |
+| 4 | Subscriptions: endpoint `/api/v1/subscriptions` → `/api/v1/subscriptions/page` | `src/tools/subscriptions.py`, `tests/unit/test_subscriptions.py` |
+| 5 | Subscriptions: response parsing from flat array to nested `{subscriptions[], publications[]}` | Same as above |
+| 6 | Cookie: removed `connect.sid` (only `substack.sid` observed in HAR) | `src/substack_client.py`, `tests/unit/test_auth.py` |
+| 7 | httpx: added `follow_redirects=True` to handle 301 redirects | `src/substack_client.py` |
+| 8 | Navigator: updated api_quirks with HAR-verified endpoint info | `src/tools/navigator.py` |
+
+### Still Unverified (needs live testing)
+- Auth endpoint: `/api/v1/user/profile/self` (HAR shows browser uses different path)
+- Notes endpoint: `/api/v1/notes` (HAR shows notes inline in reader/feed)
+- Likes/restacks response shape: `data.get("posts", [])` (HAR didn't capture these endpoints)
+
+### Test Results
+**121 tests passing, 0 failures** — all mock responses updated to match HAR-verified shapes
+
+### Key HAR Findings (logged, not yet implemented)
+- `GET /api/v1/posts/by-id/{postId}` — alternative to slug-based post retrieval
+- `GET /api/v1/reader/posts?inboxType={paid|saved|seen}` — filtered reading lists
+- `GET /api/v1/activity/unread` — lightweight auth validation endpoint
+- Feed pagination: base64-encoded opaque cursors with session_id, timestamps, scores
+- Cookie expiry confirmed: ~90 days
+- User ID: `383926424`

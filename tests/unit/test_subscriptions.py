@@ -3,26 +3,40 @@ from unittest.mock import patch, AsyncMock
 import httpx
 
 
-MOCK_SUBSCRIPTIONS_RESPONSE = [
-    {
-        "publication": {
+MOCK_SUBSCRIPTIONS_RESPONSE = {
+    "subscriptions": [
+        {
+            "id": 1001,
+            "user_id": 383926424,
+            "publication_id": 100,
+            "membership_state": "free_signup",
+        },
+        {
+            "id": 1002,
+            "user_id": 383926424,
+            "publication_id": 200,
+            "membership_state": "free_signup",
+        },
+    ],
+    "publications": [
+        {
+            "id": 100,
             "name": "Test Publication",
             "subdomain": "testpub",
             "custom_domain": None,
             "author_name": "Author One",
             "description": "A test publication",
-        }
-    },
-    {
-        "publication": {
+        },
+        {
+            "id": 200,
             "name": "Another Blog",
             "subdomain": "anotherblog",
             "custom_domain": "blog.example.com",
             "author_name": "Author Two",
             "description": "Another blog",
-        }
-    },
-]
+        },
+    ],
+}
 
 
 class TestGetSubscriptions:
@@ -99,7 +113,7 @@ class TestGetSubscriptions:
 
         mock_response = httpx.Response(
             200,
-            json=[],
+            json={"subscriptions": [], "publications": []},
             request=httpx.Request("GET", "https://substack.com/api/v1/subscriptions"),
         )
 

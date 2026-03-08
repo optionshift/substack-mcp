@@ -19,14 +19,13 @@ class TestSubstackClient:
         with pytest.raises(ValueError):
             SubstackClient(session_cookie=None)
 
-    def test_client_sets_dual_cookies(self):
+    def test_client_sets_session_cookie(self):
         from src.substack_client import SubstackClient
         client = SubstackClient(session_cookie="test_cookie_value")
         cookies = client.get_cookies()
         assert "substack.sid" in cookies
-        assert "connect.sid" in cookies
         assert cookies["substack.sid"] == "test_cookie_value"
-        assert cookies["connect.sid"] == "test_cookie_value"
+        assert "connect.sid" not in cookies
 
     def test_client_stores_cookie(self):
         from src.substack_client import SubstackClient

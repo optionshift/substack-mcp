@@ -2,7 +2,7 @@ import httpx
 
 from src.substack_client import create_client
 
-SUBSCRIPTIONS_ENDPOINT = "/api/v1/subscriptions"
+SUBSCRIPTIONS_ENDPOINT = "/api/v1/subscriptions/page"
 
 
 def get_client():
@@ -53,9 +53,15 @@ async def get_subscriptions() -> list | dict:
         }
 
     data = response.json()
+
+    # Build publication lookup by ID for joining
+    pub_lookup = {}
+    for pub in data.get("publications", []):
+        pub_lookup[pub.get("id")] = pub
+
     result = []
-    for item in data:
-        pub = item.get("publication", {})
+    for sub in data.get("subscriptions", []):
+        pub = pub_lookup.get(sub.get("publication_id"), {})
         subdomain = pub.get("subdomain", "")
         custom_domain = pub.get("custom_domain")
         base_url = f"https://{custom_domain}" if custom_domain else f"https://{subdomain}.substack.com"

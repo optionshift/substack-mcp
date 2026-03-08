@@ -202,7 +202,9 @@ async def get_subscription_feed(
             pass
 
     try:
-        response = await client.get(SUB_ENDPOINT, params={"filter": "subscription"})
+        response = await client.get(
+            SUB_ENDPOINT, params={"tab": "subscribed", "type": "secondary"}
+        )
     except Exception:
         return await _fetch_via_rss(limit, since_dt, summarize, cache)
 
@@ -210,12 +212,17 @@ async def get_subscription_feed(
         return await _fetch_via_rss(limit, since_dt, summarize, cache)
 
     data = response.json()
-    posts = data.get("posts", [])
+    items = data.get("items", [])
     articles = []
 
-    for post in posts:
+    for item in items:
         if len(articles) >= limit:
             break
+
+        # Subscription feed mixes posts and notes — only process posts
+        post = item.get("post")
+        if post is None:
+            continue
 
         parsed = _parse_article(post)
         article_id = f"substack_post_{parsed['post_id']}"
