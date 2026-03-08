@@ -82,7 +82,7 @@
 | 6 — FYP Feed | Complete | 10 | Endpoint, dedup, since filter, summarize toggle, auth errors. Registered in server.py. |
 | 7 — Sub Feed | Complete | 8 | Primary API + RSS fallback (D013), dedup, since filter, summarize. Registered in server.py. |
 | 8 — Post Content | Complete | 9 | URL parsing, HTML→markdown, dedup exception (insert but don't skip), 404 handling. Registered in server.py. |
-| 9 — Likes/Restacks | Not Started | — | — |
+| 9 — Likes/Restacks | Complete | 11 | Uses cached user_id, dedup, since filter, summarize. Both registered in server.py. |
 | 10 — Notes Feed | Not Started | — | — |
 | 11 — Search | Not Started | — | — |
 | 12 — Navigator | Not Started | — | — |

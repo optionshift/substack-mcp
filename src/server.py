@@ -6,7 +6,9 @@ from starlette.responses import JSONResponse
 
 from src.tools.auth import auth_check
 from src.tools.fyp_feed import get_fyp_feed
+from src.tools.likes import get_likes
 from src.tools.post_content import get_post_content
+from src.tools.restacks import get_restacks
 from src.tools.subscription_feed import get_subscription_feed
 from src.tools.subscriptions import get_subscriptions
 
@@ -23,6 +25,18 @@ async def ss_auth_check() -> dict:
 async def ss_get_fyp_feed(limit: int = 20, since: str | None = None, summarize: bool = True) -> list | dict:
     """Get personalized For You feed with dedup and optional summarization."""
     return await get_fyp_feed(limit=limit, since=since, summarize=summarize)
+
+
+@mcp.tool()
+async def ss_get_likes(limit: int = 20, since: str | None = None, summarize: bool = True) -> list | dict:
+    """Get user's liked/hearted posts (high signal)."""
+    return await get_likes(limit=limit, since=since, summarize=summarize)
+
+
+@mcp.tool()
+async def ss_get_restacks(limit: int = 20, since: str | None = None, summarize: bool = True) -> list | dict:
+    """Get user's restacked/shared posts (highest signal)."""
+    return await get_restacks(limit=limit, since=since, summarize=summarize)
 
 
 @mcp.tool()
