@@ -1,5 +1,6 @@
 import os
 
+from mcp.server.auth.provider import AccessToken, TokenVerifier
 from mcp.server.fastmcp import FastMCP
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -15,7 +16,32 @@ from src.tools.search import search_publications
 from src.tools.subscription_feed import get_subscription_feed
 from src.tools.subscriptions import get_subscriptions
 
-mcp = FastMCP("ss-navigator")
+
+class BearerTokenVerifier(TokenVerifier):
+    """Validates bearer tokens against MCP_API_KEY environment variable."""
+
+    def __init__(self, api_key: str):
+        self.api_key = api_key
+
+    async def verify_token(self, token: str) -> AccessToken | None:
+        if token == self.api_key:
+            return AccessToken(
+                token=token,
+                client_id="substack-mcp",
+                scopes=["read"],
+            )
+        return None
+
+
+def create_bearer_verifier() -> BearerTokenVerifier | None:
+    api_key = os.environ.get("MCP_API_KEY")
+    if api_key:
+        return BearerTokenVerifier(api_key)
+    return None
+
+
+_verifier = create_bearer_verifier()
+mcp = FastMCP("ss-navigator", token_verifier=_verifier)
 
 
 @mcp.tool()

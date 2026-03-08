@@ -80,3 +80,42 @@ class TestTransportSelection:
         from src.server import get_transport
         with patch.dict(os.environ, {"MCP_ENV": "development"}):
             assert get_transport() == "stdio"
+
+
+class TestBearerAuth:
+    """Test MCP_API_KEY bearer token authentication."""
+
+    def test_auth_enabled_when_key_set(self):
+        """Server should have token_verifier when MCP_API_KEY is set."""
+        with patch.dict(os.environ, {"MCP_API_KEY": "test-secret-key"}):
+            from src.server import create_bearer_verifier
+            verifier = create_bearer_verifier()
+            assert verifier is not None
+
+    def test_auth_disabled_when_no_key(self):
+        """No verifier when MCP_API_KEY is not set."""
+        env = os.environ.copy()
+        env.pop("MCP_API_KEY", None)
+        with patch.dict(os.environ, env, clear=True):
+            from src.server import create_bearer_verifier
+            verifier = create_bearer_verifier()
+            assert verifier is None
+
+    @pytest.mark.asyncio
+    async def test_valid_token_returns_access(self):
+        """Valid bearer token should return AccessToken."""
+        with patch.dict(os.environ, {"MCP_API_KEY": "test-secret-key"}):
+            from src.server import create_bearer_verifier
+            verifier = create_bearer_verifier()
+            result = await verifier.verify_token("test-secret-key")
+            assert result is not None
+            assert result.token == "test-secret-key"
+
+    @pytest.mark.asyncio
+    async def test_invalid_token_returns_none(self):
+        """Invalid bearer token should return None."""
+        with patch.dict(os.environ, {"MCP_API_KEY": "test-secret-key"}):
+            from src.server import create_bearer_verifier
+            verifier = create_bearer_verifier()
+            result = await verifier.verify_token("wrong-key")
+            assert result is None
