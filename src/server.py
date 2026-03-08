@@ -10,6 +10,7 @@ from src.tools.likes import get_likes
 from src.tools.notes_feed import get_notes_feed
 from src.tools.post_content import get_post_content
 from src.tools.restacks import get_restacks
+from src.tools.search import search_publications
 from src.tools.subscription_feed import get_subscription_feed
 from src.tools.subscriptions import get_subscriptions
 
@@ -56,6 +57,12 @@ async def ss_get_post_content(url: str | None = None, post_id: str | None = None
 async def ss_get_subscription_feed(limit: int = 30, since: str | None = None, summarize: bool = True) -> list | dict:
     """Get subscription feed with dedup, summarization, and RSS fallback."""
     return await get_subscription_feed(limit=limit, since=since, summarize=summarize)
+
+
+@mcp.tool()
+async def ss_search_publications(query: str, limit: int = 10) -> list | dict:
+    """Search for Substack publications by keyword (no auth required)."""
+    return await search_publications(query=query, limit=limit)
 
 
 @mcp.tool()

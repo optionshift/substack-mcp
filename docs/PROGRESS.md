@@ -84,7 +84,7 @@
 | 8 — Post Content | Complete | 9 | URL parsing, HTML→markdown, dedup exception (insert but don't skip), 404 handling. Registered in server.py. |
 | 9 — Likes/Restacks | Complete | 11 | Uses cached user_id, dedup, since filter, summarize. Both registered in server.py. |
 | 10 — Notes Feed | Complete | 7 | Distinct schema, high_signal flagging (likes>10 OR restacks>3), dedup by note ID. Registered in server.py. |
-| 11 — Search | Not Started | — | — |
+| 11 — Search | Complete | 6 | No auth, no dedup, limit support, special chars handled. Registered in server.py. |
 | 12 — Navigator | Not Started | — | — |
 | 13 — Deploy | Not Started | — | — |
 
