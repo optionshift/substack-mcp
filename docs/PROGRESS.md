@@ -21,7 +21,7 @@
 - [x] Researched Substack API endpoints for verification
 
 ### Also Completed (after agents returned)
-- [x] Scaffolded project directories (src/tools/, tests/unit/, tests/integration/, tests/fixtures/)
+- [x] Created empty project directories (src/tools/, tests/unit/, tests/integration/, tests/fixtures/) — no __init__.py files yet
 - [x] Created CLAUDE.md with all project rules (agent teams, caching, TDD, deployment)
 - [x] Created .gitignore
 - [x] Verified Substack API endpoints via research agent (2 corrections found, 1 unverified)
@@ -78,7 +78,7 @@
 | 2 — Auth | Not Started | — | — |
 | 3 — Subscriptions | Not Started | — | — |
 | 4 — Dedup Cache | Not Started | — | — |
-| 5 — Summarization | Not Started | — | Moved before feed tools (D: feed tools default summarize=true) |
+| 5 — Summarization | Not Started | — | Moved before feed tools (per D003 — feed tools default summarize=true) |
 | 6 — FYP Feed | Not Started | — | — |
 | 7 — Sub Feed | Not Started | — | — |
 | 8 — Post Content | Not Started | — | — |

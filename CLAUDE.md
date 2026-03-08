@@ -60,6 +60,39 @@ When running code review agents or parallel investigation agents, always verify 
 - Don't mark deploy as done until all 3 pass
 - Never assume merging or local verification equals deployment
 
+### Sprint Protocol (MANDATORY)
+Each batch follows this exact sequence. No shortcuts.
+
+#### Phase 1: Plan
+- Read the batch's Mini PRD section in `docs/PRD.md`
+- Confirm scope, files, parameters, schemas, and gate criteria
+
+#### Phase 2: TDD Cycle (RED → GREEN)
+1. **RED** — Write failing tests first. Run tests → confirm they FAIL (red)
+2. **CODE** — Implement the minimum code to make tests pass
+3. **GREEN** — Run tests → confirm they PASS (green). Iterate until all green
+
+#### Phase 3: Batch Checkpoint
+1. Update `docs/PROGRESS.md` — mark batch status, test count, notes
+2. Run full test suite — zero regressions
+3. `git diff --staged` — verify only batch files included
+4. Atomic git commit with batch reference (e.g., "Batch 1: server scaffold with health endpoint")
+
+#### Phase 4: Sprint Review (after all batches in a sprint complete)
+1. Launch code-reviewer agent teams with gates on all changed files
+2. Launch verification agent — re-read every cited file+line, keep only confirmed findings
+3. Run targeted tests on areas flagged by reviewers
+4. Fix any verified issues
+5. Progress log update + atomic git commit
+
+#### Phase 5: Final Approval
+1. Run FULL test suite — zero failures
+2. Run FULL linter/type-check — zero errors
+3. Launch final code-review agent with gate: must return PASS
+4. Final `docs/PROGRESS.md` update with `APPROVED` stamp and test counts
+5. Final atomic git commit with full sprint summary
+6. Present summary to user: files changed, tests added, gates passed, batch status
+
 ## Key Files
 - `docs/PRD.md` — Product requirements document
 - `docs/PROGRESS.md` — Batch progress tracking
@@ -90,8 +123,8 @@ When running code review agents or parallel investigation agents, always verify 
 
 ### Endpoint Verification Status
 CONFIRMED: publication/search, subscriptions, likes, restacks, archive
-WRONG PATH (corrected above): user/me → user/profile/self, reader/notes/feed → notes
-UNVERIFIED (need live testing): reader/feed (FYP), reader/feed?filter=subscription
+CORRECTED (via source code research, not live-tested): user/me → user/profile/self, reader/notes/feed → notes
+UNVERIFIED (need live testing): reader/feed (FYP), reader/feed?filter=subscription, user/profile/self (corrected path)
 Cookie expiry: MONTHS (not 30 days as originally spec'd)
 
 ## Environment Variables
