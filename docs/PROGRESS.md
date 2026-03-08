@@ -87,6 +87,7 @@
 | 11 — Search | Complete | 6 | No auth, no dedup, limit support, special chars handled. Registered in server.py. |
 | 12 — Navigator | Complete | 9 | All 10 tools listed, workflow guides, auth rotation instructions, API quirks. Registered in server.py. |
 | 13 — Deploy | Complete | — | Dockerfile, fly.toml, __main__.py. Deployed to ss-nav-3950b79a5cc7.fly.dev. No auth (obscure URL). |
+| 14 — Like | Complete | 8 | First write op. POST /post/{id}/reaction + /comment/{id}/reaction. Added post() to SubstackClient. 129 total tests. |
 
 ---
 
@@ -227,3 +228,33 @@ User captured two HAR files from live substack.com browsing:
 
 ### Test Results
 **125 tests passing, 0 failures** (4 new auth tests added)
+
+---
+
+## Batch 14 — Like/React Tool (March 8, 2026)
+
+### HAR-Verified Endpoints
+| Type | Endpoint | Body |
+|---|---|---|
+| Article | `POST /api/v1/post/{post_id}/reaction` | `{"reaction": "❤", "surface": "reader", "tabId": "for-you"}` |
+| Note | `POST /api/v1/comment/{comment_id}/reaction` | `{"publication_id": null, "reaction": "❤", "tabId": "for-you"}` |
+
+Both return `200 OK` with `{}` body on success.
+
+### Files Created/Modified
+- `src/tools/like.py` — new tool, `like_content(id, type)` with validation and error handling
+- `tests/unit/test_like.py` — 8 tests (post success, note success, auth expired, no cookie, invalid type, server error, network error)
+- `src/substack_client.py` — added `post()` method (mirrors `get()` with rate limiting and response buffering)
+- `src/server.py` — registered `ss_like` tool
+- `src/tools/navigator.py` — added `ss_like` to tool list and API quirks
+
+### Post-Deploy Verification
+| Check | Result |
+|---|---|
+| `fly status` | started, 1 passing health check |
+| `GET /health` | `{"status":"ok","version":"1.0.0"}` |
+| MCP initialize | 200, session established |
+| `ss_navigator` call | 11 tools listed (ss_like included) |
+
+### Test Results
+**129 tests passing, 0 failures** (8 new like tests)
