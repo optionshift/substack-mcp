@@ -88,6 +88,7 @@
 | 12 — Navigator | Complete | 9 | All 10 tools listed, workflow guides, auth rotation instructions, API quirks. Registered in server.py. |
 | 13 — Deploy | Complete | — | Dockerfile, fly.toml, __main__.py. Deployed to ss-nav-3950b79a5cc7.fly.dev. No auth (obscure URL). |
 | 14 — Like | Complete | 8 | First write op. POST /post/{id}/reaction + /comment/{id}/reaction. Added post() to SubstackClient. 129 total tests. |
+| 15 — Activity Feed | Complete | 16 | HAR-verified endpoint. 3 filters (all, replies-and-mentions, restacks). Enriched senders/posts/comments/pubs. 145 total tests. |
 
 ---
 
@@ -258,3 +259,48 @@ Both return `200 OK` with `{}` body on success.
 
 ### Test Results
 **129 tests passing, 0 failures** (8 new like tests)
+
+---
+
+## Batch 15 — Activity Feed (March 8, 2026)
+
+### HAR-Verified Endpoint
+| Endpoint | Method | Auth | Description |
+|---|---|---|---|
+| `/api/v1/activity-feed-web?filter={filter}` | GET | substack.sid | Main activity/notifications feed |
+| `/api/v1/activity/unread` | POST | substack.sid | Mark notifications as read (documented, not implemented) |
+
+### Filters
+| Filter | Activity Types |
+|---|---|
+| `all` | note_like, post_like, restack, restack_quote, note_reply, viral_gift_granted |
+| `replies-and-mentions` | note_reply |
+| `restacks` | restack, restack_quote |
+
+### Response Shape
+- `activityItems[]` — notifications with type, sender_count, recent_sender_ids, target IDs
+- `users[]` — full user objects for sender lookup (name, handle, photo, is_following, can_dm)
+- `posts[]` — post objects for target_post_id lookup
+- `comments[]` — comment objects for target_comment_id / comment_id lookup
+- `pubs[]` — publication objects for publication_id lookup
+- `more: bool` — pagination flag
+
+### Enrichment
+Tool joins activity items with users/posts/comments/pubs arrays server-side, returning enriched objects with full sender details, target post titles/URLs, comment bodies, and publication names.
+
+### Files Created/Modified
+- `src/tools/activity_feed.py` — new tool, `get_activity_feed(filter, limit)` with validation, enrichment, error handling
+- `tests/unit/test_activity_feed.py` — 16 tests (all filter, restacks filter, replies filter, enrichment x4, limit, validation, auth x2, errors x2, endpoint x2, isNew flag)
+- `src/server.py` — registered `ss_get_activity_feed` tool
+- `src/tools/navigator.py` — added tool to list, added 4 API quirks
+
+### Post-Deploy Verification
+| Check | Result |
+|---|---|
+| `fly status` | started, 1 passing health check |
+| `GET /health` | `{"status":"ok","version":"1.0.0"}` |
+| MCP initialize | 200, session established |
+| `ss_navigator` call | 12 tools listed (ss_get_activity_feed included) |
+
+### Test Results
+**145 tests passing, 0 failures** (16 new activity feed tests)

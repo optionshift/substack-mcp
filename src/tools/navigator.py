@@ -40,6 +40,10 @@ TOOLS = [
         "description": "Search for publications by keyword. No auth required. Params: query, limit.",
     },
     {
+        "name": "ss_get_activity_feed",
+        "description": "See who liked, restacked, or replied to your content. Params: filter ('all', 'replies-and-mentions', 'restacks'), limit.",
+    },
+    {
         "name": "ss_like",
         "description": "Like/heart an article or note. Params: id (post or comment ID), type ('post' or 'note').",
     },
@@ -101,6 +105,10 @@ def get_navigator() -> dict:
             "Likes/restacks require user_id from ss_auth_check response.",
             "Like article: POST /api/v1/post/{id}/reaction with {reaction: ❤, surface: reader, tabId: for-you}.",
             "Like note: POST /api/v1/comment/{id}/reaction with {publication_id: null, reaction: ❤, tabId: for-you}.",
+            "Activity feed: GET /api/v1/activity-feed-web?filter={all|replies-and-mentions|restacks} — shows who engaged with your content.",
+            "Activity feed returns denormalized data: activityItems[] + users[] + posts[] + comments[] + pubs[] for client-side join.",
+            "Activity types: note_like, post_like, restack, restack_quote, note_reply, viral_gift_granted.",
+            "Mark activity as read: POST /api/v1/activity/unread with {after: ISO timestamp}.",
             "Rate limit: 1 request/second enforced server-side.",
         ],
     }

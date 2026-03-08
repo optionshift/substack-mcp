@@ -6,6 +6,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from src.tools.auth import auth_check
+from src.tools.activity_feed import get_activity_feed
 from src.tools.like import like_content
 from src.tools.fyp_feed import get_fyp_feed
 from src.tools.navigator import get_navigator
@@ -92,6 +93,12 @@ async def ss_search_publications(query: str, limit: int = 10) -> list | dict:
 async def ss_get_subscriptions() -> list | dict:
     """List all followed Substack publications."""
     return await get_subscriptions()
+
+
+@mcp.tool()
+async def ss_get_activity_feed(filter: str = "all", limit: int = 20) -> dict:
+    """See who liked, restacked, or replied to your posts/notes. Filters: all, replies-and-mentions, restacks."""
+    return await get_activity_feed(filter=filter, limit=limit)
 
 
 @mcp.tool()
