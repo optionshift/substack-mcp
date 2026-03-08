@@ -86,7 +86,7 @@
 | 10 — Notes Feed | Complete | 7 | Distinct schema, high_signal flagging (likes>10 OR restacks>3), dedup by note ID. Registered in server.py. |
 | 11 — Search | Complete | 6 | No auth, no dedup, limit support, special chars handled. Registered in server.py. |
 | 12 — Navigator | Complete | 9 | All 10 tools listed, workflow guides, auth rotation instructions, API quirks. Registered in server.py. |
-| 13 — Deploy | Complete | 4 | Dockerfile, fly.toml, bearer auth middleware, __main__.py. Deployed to substack-mcp.fly.dev. |
+| 13 — Deploy | Complete | — | Dockerfile, fly.toml, __main__.py. Deployed to ss-nav-3950b79a5cc7.fly.dev. No auth (obscure URL). |
 
 ---
 
