@@ -76,14 +76,16 @@ class DedupCache:
             return True
 
     def exists(self, article_id: str) -> bool:
-        cursor = self.conn.execute(
-            "SELECT 1 FROM seen_articles WHERE id = ?", (article_id,)
-        )
-        return cursor.fetchone() is not None
+        with self._lock:
+            cursor = self.conn.execute(
+                "SELECT 1 FROM seen_articles WHERE id = ?", (article_id,)
+            )
+            return cursor.fetchone() is not None
 
     def list_by_feed(self, source_feed: str) -> list[dict]:
-        cursor = self.conn.execute(
-            "SELECT id, url, title, source, first_seen_at, source_feed FROM seen_articles WHERE source_feed = ?",
-            (source_feed,),
-        )
-        return [dict(row) for row in cursor.fetchall()]
+        with self._lock:
+            cursor = self.conn.execute(
+                "SELECT id, url, title, source, first_seen_at, source_feed FROM seen_articles WHERE source_feed = ?",
+                (source_feed,),
+            )
+            return [dict(row) for row in cursor.fetchall()]

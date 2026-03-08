@@ -74,10 +74,10 @@
 
 | Batch | Status | Tests | Notes |
 |---|---|---|---|
-| 1 — Scaffold | Complete | 11 | pyproject.toml, src/server.py, __init__.py files, test_server.py |
-| 2 — Auth | Complete | 10 | Live-test deferred (SUBSTACK_SESSION_COOKIE empty). substack_client.py + tools/auth.py |
-| 3 — Subscriptions | Complete | 7 | tools/subscriptions.py |
-| 4 — Dedup Cache | Complete | 15 | src/dedup.py, unit + integration tests |
+| 1 — Scaffold | Complete | 11 | pyproject.toml, src/server.py, __init__.py files, test_server.py. Sprint review: registered MCP tools. |
+| 2 — Auth | Complete | 13 | Live-test deferred (cookie empty). Sprint review: +3 tests (500 error, env var wiring). Response buffering fix. |
+| 3 — Subscriptions | Complete | 9 | Sprint review: +2 tests (custom_domain, rate limiting). custom_domain URL fix. |
+| 4 — Dedup Cache | Complete | 15 | Sprint review: exists() thread lock fix, list_by_feed() thread lock fix. |
 | 5 — Summarization | Not Started | — | Moved before feed tools (per D003 — feed tools default summarize=true) |
 | 6 — FYP Feed | Not Started | — | — |
 | 7 — Sub Feed | Not Started | — | — |
@@ -87,3 +87,16 @@
 | 11 — Search | Not Started | — | — |
 | 12 — Navigator | Not Started | — | — |
 | 13 — Deploy | Not Started | — | — |
+
+---
+
+## Sprint 1 Review Findings
+
+1. **FIXED** — `substack_client.py`: httpx response not buffered before AsyncClient closes. Added `await response.aread()` inside context manager.
+2. **FIXED** — `dedup.py`: `exists()` and `list_by_feed()` accessed `self.conn` without `self._lock`. Added lock acquisition.
+3. **FIXED** — `substack_client.py`: Rate limiting absent. Added 1 req/sec enforcement via `asyncio.sleep` in `SubstackClient.get()`.
+4. **FIXED** — `server.py`: No MCP tools registered. Added `@mcp.tool()` decorators for `ss_auth_check` and `ss_get_subscriptions`.
+5. **FIXED** — `subscriptions.py`: `custom_domain` ignored, always generated `.substack.com` URLs. Now uses `custom_domain` when present.
+6. **SKIPPED** — Duplicate `get_client()` wrapper in tool files. Intentional for test mocking (`unittest.mock.patch` targets).
+7. **FIXED** — Added test for non-401 HTTP error codes (500) in auth — `test_server_error_returns_unknown`.
+8. **FIXED** — Added tests for `create_client()` env var wiring — `test_create_client_with_env_var`, `test_create_client_without_env_var`.

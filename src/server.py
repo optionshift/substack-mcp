@@ -4,7 +4,22 @@ from mcp.server.fastmcp import FastMCP
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from src.tools.auth import auth_check
+from src.tools.subscriptions import get_subscriptions
+
 mcp = FastMCP("ss-navigator")
+
+
+@mcp.tool()
+async def ss_auth_check() -> dict:
+    """Validate Substack session cookie and return user profile."""
+    return await auth_check()
+
+
+@mcp.tool()
+async def ss_get_subscriptions() -> list | dict:
+    """List all followed Substack publications."""
+    return await get_subscriptions()
 
 
 def health_check() -> dict:

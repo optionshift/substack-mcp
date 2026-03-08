@@ -57,10 +57,12 @@ async def get_subscriptions() -> list | dict:
     for item in data:
         pub = item.get("publication", {})
         subdomain = pub.get("subdomain", "")
+        custom_domain = pub.get("custom_domain")
+        base_url = f"https://{custom_domain}" if custom_domain else f"https://{subdomain}.substack.com"
         result.append({
             "name": pub.get("name", ""),
             "subdomain": subdomain,
-            "url": f"https://{subdomain}.substack.com",
+            "url": base_url,
             "rss_url": f"https://{subdomain}.substack.com/feed",
             "author": pub.get("author_name", ""),
             "description": pub.get("description", ""),

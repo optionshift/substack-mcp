@@ -171,3 +171,44 @@ class TestAuthCheck:
         assert "name" in result
         assert "email" in result
         assert "expires_warning" in result
+
+    @pytest.mark.asyncio
+    async def test_server_error_returns_unknown(self):
+        from src.tools.auth import auth_check
+
+        mock_response = httpx.Response(
+            500,
+            json={"error": "internal server error"},
+            request=httpx.Request("GET", "https://substack.com/api/v1/user/profile/self"),
+        )
+
+        with patch("src.tools.auth.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get.return_value = mock_response
+            mock_get_client.return_value = mock_client
+
+            result = await auth_check()
+
+        assert result["error"] is True
+        assert result["code"] == "UNKNOWN"
+        assert "500" in result["message"]
+
+
+class TestCreateClient:
+    """Test create_client env var wiring."""
+
+    def test_create_client_with_env_var(self):
+        from src.substack_client import create_client
+        with patch.dict("os.environ", {"SUBSTACK_SESSION_COOKIE": "test_value"}):
+            client = create_client()
+        assert client is not None
+        assert client.session_cookie == "test_value"
+
+    def test_create_client_without_env_var(self):
+        from src.substack_client import create_client
+        import os
+        env = os.environ.copy()
+        env.pop("SUBSTACK_SESSION_COOKIE", None)
+        with patch.dict("os.environ", env, clear=True):
+            client = create_client()
+        assert client is None
