@@ -6,6 +6,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from src.tools.auth import auth_check
+from src.tools.like import like_content
 from src.tools.fyp_feed import get_fyp_feed
 from src.tools.navigator import get_navigator
 from src.tools.likes import get_likes
@@ -91,6 +92,12 @@ async def ss_search_publications(query: str, limit: int = 10) -> list | dict:
 async def ss_get_subscriptions() -> list | dict:
     """List all followed Substack publications."""
     return await get_subscriptions()
+
+
+@mcp.tool()
+async def ss_like(id: str, type: str) -> dict:
+    """Like/heart an article or note. type: 'post' or 'note'."""
+    return await like_content(id=id, type=type)
 
 
 def health_check() -> dict:

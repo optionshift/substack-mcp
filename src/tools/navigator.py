@@ -39,6 +39,10 @@ TOOLS = [
         "name": "ss_search_publications",
         "description": "Search for publications by keyword. No auth required. Params: query, limit.",
     },
+    {
+        "name": "ss_like",
+        "description": "Like/heart an article or note. Params: id (post or comment ID), type ('post' or 'note').",
+    },
 ]
 
 WORKFLOWS = [
@@ -95,6 +99,8 @@ def get_navigator() -> dict:
             "Feed responses use base64-encoded opaque cursors for pagination.",
             "Cookie expiry is ~90 days. Only substack.sid is needed (not connect.sid).",
             "Likes/restacks require user_id from ss_auth_check response.",
+            "Like article: POST /api/v1/post/{id}/reaction with {reaction: ❤, surface: reader, tabId: for-you}.",
+            "Like note: POST /api/v1/comment/{id}/reaction with {publication_id: null, reaction: ❤, tabId: for-you}.",
             "Rate limit: 1 request/second enforced server-side.",
         ],
     }
