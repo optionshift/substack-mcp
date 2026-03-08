@@ -6,6 +6,7 @@ from starlette.responses import JSONResponse
 
 from src.tools.auth import auth_check
 from src.tools.fyp_feed import get_fyp_feed
+from src.tools.navigator import get_navigator
 from src.tools.likes import get_likes
 from src.tools.notes_feed import get_notes_feed
 from src.tools.post_content import get_post_content
@@ -15,6 +16,12 @@ from src.tools.subscription_feed import get_subscription_feed
 from src.tools.subscriptions import get_subscriptions
 
 mcp = FastMCP("ss-navigator")
+
+
+@mcp.tool()
+async def ss_navigator() -> dict:
+    """START here. Discover tools, workflows, and Substack API domain knowledge."""
+    return get_navigator()
 
 
 @mcp.tool()

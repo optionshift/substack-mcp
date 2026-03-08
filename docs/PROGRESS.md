@@ -85,7 +85,7 @@
 | 9 — Likes/Restacks | Complete | 11 | Uses cached user_id, dedup, since filter, summarize. Both registered in server.py. |
 | 10 — Notes Feed | Complete | 7 | Distinct schema, high_signal flagging (likes>10 OR restacks>3), dedup by note ID. Registered in server.py. |
 | 11 — Search | Complete | 6 | No auth, no dedup, limit support, special chars handled. Registered in server.py. |
-| 12 — Navigator | Not Started | — | — |
+| 12 — Navigator | Complete | 9 | All 10 tools listed, workflow guides, auth rotation instructions, API quirks. Registered in server.py. |
 | 13 — Deploy | Not Started | — | — |
 
 ---
