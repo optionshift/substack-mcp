@@ -1,6 +1,7 @@
 import os
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -48,7 +49,18 @@ def create_bearer_verifier():
     return os.environ.get("MCP_API_KEY")
 
 
-mcp = FastMCP("ss-navigator")
+mcp = FastMCP(
+    "ss-navigator",
+    transport_security=TransportSecuritySettings(
+        enable_dns_rebinding_protection=True,
+        allowed_hosts=[
+            "substack-mcp.fly.dev",
+            "127.0.0.1:*",
+            "localhost:*",
+            "[::1]:*",
+        ],
+    ),
+)
 
 
 @mcp.tool()
