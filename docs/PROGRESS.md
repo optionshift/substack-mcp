@@ -1,6 +1,6 @@
 # Progress Log: substack-mcp
 
-## Status: Sprint 1 APPROVED
+## Status: Sprint 2-3 APPROVED
 **Last Updated:** 2026-03-08
 
 ---
@@ -123,3 +123,15 @@
 **Batches completed:** 1-4 (Scaffold, Auth, Subscriptions, Dedup Cache)
 **Sprint review:** 8 findings total → 7 fixed, 1 skipped (intentional design)
 **Final gate:** PASS (all 4 criteria verified by code-review agent)
+
+---
+
+## Sprint 2-3 Summary
+
+**APPROVED** — 2026-03-08
+**Total tests:** 121 passing, 0 failing
+**Batches completed:** 5-12 (Summarization, FYP Feed, Subscription Feed, Post Content, Likes/Restacks, Notes Feed, Search, Navigator)
+**Sprint review:** 8 findings → 6 fixed, 1 deferred (pagination — UNVERIFIED endpoints), 1 skipped (intentional design)
+**Final gate:** PASS (all 6 criteria verified by code-review agent)
+**Files created:** 16 (8 source, 8 test)
+**Tools registered:** All 10 tools registered in server.py with `@mcp.tool()` decorators
