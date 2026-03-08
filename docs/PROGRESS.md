@@ -86,7 +86,7 @@
 | 10 — Notes Feed | Complete | 7 | Distinct schema, high_signal flagging (likes>10 OR restacks>3), dedup by note ID. Registered in server.py. |
 | 11 — Search | Complete | 6 | No auth, no dedup, limit support, special chars handled. Registered in server.py. |
 | 12 — Navigator | Complete | 9 | All 10 tools listed, workflow guides, auth rotation instructions, API quirks. Registered in server.py. |
-| 13 — Deploy | Not Started | — | — |
+| 13 — Deploy | Complete | 4 | Dockerfile, fly.toml, bearer auth middleware, __main__.py. Deployed to substack-mcp.fly.dev. |
 
 ---
 
@@ -186,3 +186,44 @@ User captured two HAR files from live substack.com browsing:
 - Feed pagination: base64-encoded opaque cursors with session_id, timestamps, scores
 - Cookie expiry confirmed: ~90 days
 - User ID: `383926424`
+
+---
+
+## Batch 13 — Deploy (March 8, 2026)
+
+### Deployment Details
+- **App:** `substack-mcp` on Fly.io
+- **URL:** `https://substack-mcp.fly.dev`
+- **MCP endpoint:** `https://substack-mcp.fly.dev/mcp/`
+- **Region:** LAX
+- **Volume:** ss_data (1GB) → /data
+- **Image:** python:3.12-slim, 53MB
+
+### Auth
+- Bearer token middleware (Starlette `BaseHTTPMiddleware`)
+- Accepts: `Authorization: Bearer <key>` header OR `?key=<key>` query param
+- Health endpoint `/health` bypasses auth
+- FastMCP's built-in `TokenVerifier` requires full OAuth `AuthSettings` — not used
+
+### Secrets (1Password vault: substack-mcp)
+- `SUBSTACK_SESSION_COOKIE` — session cookie (~90 day expiry)
+- `GOOGLE_AI_API_KEY` — Gemini Flash-Lite for summarization
+- `MCP_API_KEY` — bearer token for server auth
+
+### Post-Deploy Verification
+| Check | Result |
+|---|---|
+| `fly status` | started, 1 passing health check |
+| `GET /health` | `{"status":"ok","version":"1.0.0"}` |
+| Auth: no key | 401 |
+| Auth: wrong key | 401 |
+| Auth: valid key (header) | 307 (MCP redirect) |
+| Auth: valid key (query) | 307 (MCP redirect) |
+
+### Files Created
+- `Dockerfile` — python:3.12-slim multi-stage build
+- `fly.toml` — app config, health checks, volume mount
+- `src/__main__.py` — uvicorn entrypoint for production
+
+### Test Results
+**125 tests passing, 0 failures** (4 new auth tests added)
