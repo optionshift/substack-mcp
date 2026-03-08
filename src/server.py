@@ -55,9 +55,9 @@ async def ss_get_notes_feed(limit: int = 30, since: str | None = None) -> list |
 
 
 @mcp.tool()
-async def ss_get_post_content(url: str | None = None, post_id: str | None = None, summarize: bool = True) -> dict:
+async def ss_get_post_content(url: str | None = None, summarize: bool = True) -> dict:
     """Get full article content by URL with optional summarization."""
-    return await get_post_content(url=url, post_id=post_id, summarize=summarize)
+    return await get_post_content(url=url, summarize=summarize)
 
 
 @mcp.tool()

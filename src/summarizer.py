@@ -42,7 +42,7 @@ async def summarize(content: str | None) -> dict:
     prompt = PROMPT_TEMPLATE.format(content=truncated)
 
     try:
-        response = client.models.generate_content(
+        response = await client.aio.models.generate_content(
             model=MODEL,
             contents=prompt,
         )

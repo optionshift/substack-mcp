@@ -183,7 +183,7 @@ class TestPostContentErrors:
         assert result["code"] == "NOT_FOUND"
 
     @pytest.mark.asyncio
-    async def test_no_url_or_id_returns_error(self):
+    async def test_no_url_returns_error(self):
         from src.tools.post_content import get_post_content
 
         result = await get_post_content()

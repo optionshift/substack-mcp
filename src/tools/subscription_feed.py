@@ -1,3 +1,5 @@
+import asyncio
+import hashlib
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
@@ -75,12 +77,11 @@ def _parse_rss_item(item: ET.Element, pub_name: str) -> dict:
         except Exception:
             pass
 
-    # Generate a stable ID from the guid
-    import hashlib
-    post_id = hashlib.md5(guid.encode()).hexdigest()[:12]
+    # Generate a stable ID from the URL for cross-source dedup
+    url_hash = hashlib.md5(link.encode()).hexdigest()[:12]
 
     return {
-        "post_id": f"rss_{post_id}",
+        "post_id": f"rss_{url_hash}",
         "title": title,
         "author": "",
         "publication": pub_name,
@@ -109,6 +110,7 @@ async def _fetch_via_rss(
 
         try:
             response = await fetch_rss(rss_url)
+            await asyncio.sleep(1)  # Rate limit RSS requests
             if response.status_code != 200:
                 continue
         except Exception:

@@ -32,7 +32,7 @@ class TestSummarizeSuccess:
                 '{"summary": "Test summary.", "tags": ["creator-economy"], '
                 '"relevance": 8, "key_quote": "A quote.", "angle": "An angle"}'
             )
-            mock_client.models.generate_content.return_value = mock_response
+            mock_client.aio.models.generate_content = AsyncMock(return_value=mock_response)
             mock_get.return_value = mock_client
 
             result = await summarize(SAMPLE_CONTENT)
@@ -54,7 +54,7 @@ class TestSummarizeSuccess:
                 '{"summary": "Test summary.", "tags": ["creator-economy"], '
                 '"relevance": 8, "key_quote": "A quote.", "angle": "An angle"}'
             )
-            mock_client.models.generate_content.return_value = mock_response
+            mock_client.aio.models.generate_content = AsyncMock(return_value=mock_response)
             mock_get.return_value = mock_client
 
             result = await summarize(SAMPLE_CONTENT)
@@ -77,7 +77,7 @@ class TestSummarizeTags:
                 '{"summary": "Test.", "tags": ["creator-economy", "AI-agents"], '
                 '"relevance": 7, "key_quote": "Quote.", "angle": "Angle"}'
             )
-            mock_client.models.generate_content.return_value = mock_response
+            mock_client.aio.models.generate_content = AsyncMock(return_value=mock_response)
             mock_get.return_value = mock_client
 
             result = await summarize(SAMPLE_CONTENT)
@@ -96,7 +96,7 @@ class TestSummarizeTags:
                 '{"summary": "Test.", "tags": ["creator-economy", "invalid-tag"], '
                 '"relevance": 7, "key_quote": "Quote.", "angle": "Angle"}'
             )
-            mock_client.models.generate_content.return_value = mock_response
+            mock_client.aio.models.generate_content = AsyncMock(return_value=mock_response)
             mock_get.return_value = mock_client
 
             result = await summarize(SAMPLE_CONTENT)
@@ -119,7 +119,7 @@ class TestSummarizeRelevance:
                 '{"summary": "Test.", "tags": ["product"], '
                 '"relevance": 8, "key_quote": "Quote.", "angle": "Angle"}'
             )
-            mock_client.models.generate_content.return_value = mock_response
+            mock_client.aio.models.generate_content = AsyncMock(return_value=mock_response)
             mock_get.return_value = mock_client
 
             result = await summarize(SAMPLE_CONTENT)
@@ -137,7 +137,7 @@ class TestSummarizeRelevance:
                 '{"summary": "Test.", "tags": ["product"], '
                 '"relevance": 15, "key_quote": "Quote.", "angle": "Angle"}'
             )
-            mock_client.models.generate_content.return_value = mock_response
+            mock_client.aio.models.generate_content = AsyncMock(return_value=mock_response)
             mock_get.return_value = mock_client
 
             result = await summarize(SAMPLE_CONTENT)
@@ -161,17 +161,18 @@ class TestSummarizeTruncation:
                 '{"summary": "Test.", "tags": ["other"], '
                 '"relevance": 5, "key_quote": "Quote.", "angle": "Angle"}'
             )
-            mock_client.models.generate_content.return_value = mock_response
+            mock_client.aio.models.generate_content = AsyncMock(return_value=mock_response)
             mock_get.return_value = mock_client
 
             result = await summarize(long_content)
 
         # Verify the content sent to Gemini was truncated
-        call_args = mock_client.models.generate_content.call_args
+        call_args = mock_client.aio.models.generate_content.call_args
         prompt_text = call_args[1]["contents"] if "contents" in call_args[1] else call_args[0][0]
-        # The article content within the prompt should be truncated to 15K
+        # The prompt should contain at most 15K chars of article content
         assert len(long_content) > 15000
-        assert "summary" in result  # Summarization still works
+        assert len(prompt_text) < len(long_content)
+        assert "summary" in result
 
 
 class TestSummarizeFallback:
@@ -183,7 +184,7 @@ class TestSummarizeFallback:
 
         with patch("src.summarizer.get_genai_client") as mock_get:
             mock_client = MagicMock()
-            mock_client.models.generate_content.side_effect = Exception("Gemini API error")
+            mock_client.aio.models.generate_content = AsyncMock(side_effect=Exception("Gemini API error"))
             mock_get.return_value = mock_client
 
             result = await summarize(SAMPLE_CONTENT)
@@ -199,7 +200,7 @@ class TestSummarizeFallback:
             mock_client = MagicMock()
             mock_response = MagicMock()
             mock_response.text = "This is not valid JSON"
-            mock_client.models.generate_content.return_value = mock_response
+            mock_client.aio.models.generate_content = AsyncMock(return_value=mock_response)
             mock_get.return_value = mock_client
 
             result = await summarize(SAMPLE_CONTENT)

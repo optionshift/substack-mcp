@@ -42,30 +42,21 @@ async def fetch_post(url: str) -> httpx.Response:
 
 async def get_post_content(
     url: str | None = None,
-    post_id: str | None = None,
     summarize: bool = True,
 ) -> dict:
-    if not url and not post_id:
+    if not url:
         return {
             "error": True,
             "code": "UNKNOWN",
-            "message": "Either url or post_id is required.",
+            "message": "url is required.",
             "retry_after": None,
         }
 
-    if url:
-        subdomain, slug = parse_substack_url(url)
-        if subdomain.endswith(".substack.com") or "." not in subdomain:
-            api_url = f"https://{subdomain}.substack.com/api/v1/posts/{slug}"
-        else:
-            api_url = f"https://{subdomain}/api/v1/posts/{slug}"
+    subdomain, slug = parse_substack_url(url)
+    if "." not in subdomain:
+        api_url = f"https://{subdomain}.substack.com/api/v1/posts/{slug}"
     else:
-        return {
-            "error": True,
-            "code": "UNKNOWN",
-            "message": "post_id lookup requires url. Provide the article URL.",
-            "retry_after": None,
-        }
+        api_url = f"https://{subdomain}/api/v1/posts/{slug}"
 
     try:
         response = await fetch_post(api_url)

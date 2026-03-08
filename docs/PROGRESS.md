@@ -103,6 +103,19 @@
 
 ---
 
+## Sprint 2-3 Review Findings
+
+1. **FIXED** — `post_content.py:58`: Dead branch `subdomain.endswith(".substack.com")` always false after `parse_substack_url` strips it. Simplified to `"." not in subdomain`.
+2. **FIXED** — `subscription_feed.py:79`: `import hashlib` inside function body. Moved to top-level imports.
+3. **FIXED** — `subscription_feed.py:83`: RSS dedup ID `substack_post_rss_xxx` uses guid-based hash. Changed to URL-based hash for more stable IDs.
+4. **FIXED** — `summarizer.py:45`: Sync `client.models.generate_content()` blocked async event loop. Changed to `await client.aio.models.generate_content()`.
+5. **FIXED** — `post_content.py:45`: `post_id` param accepted but non-functional (PRD spec, but no API path to look up by ID alone). Removed param from signature and server.py registration.
+6. **FIXED** — `subscription_feed.py:102-115`: No rate limiting in RSS fallback loop. Added `asyncio.sleep(1)` between RSS requests.
+7. **DEFERRED** — FYP/Notes cursor pagination: PRD specifies cursor-based pagination but API response format is UNVERIFIED (D012). Will implement when live-tested.
+8. **SKIPPED** — Duplicate `_parse_article` across feed tools. Intentional per Sprint 1 pattern — each tool file is self-contained for test mocking.
+
+---
+
 ## Sprint 1 Summary
 
 **APPROVED** — 2026-03-08
