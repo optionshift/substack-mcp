@@ -74,7 +74,7 @@
 
 | Batch | Status | Tests | Notes |
 |---|---|---|---|
-| 1 — Scaffold | Not Started | — | — |
+| 1 — Scaffold | Complete | 11 | pyproject.toml, src/server.py, __init__.py files, test_server.py |
 | 2 — Auth | Not Started | — | — |
 | 3 — Subscriptions | Not Started | — | — |
 | 4 — Dedup Cache | Not Started | — | — |
