@@ -59,6 +59,7 @@ When running code review agents or parallel investigation agents, always verify 
 - After deploying: (1) `fly status` to confirm, (2) Hit health endpoint and show response, (3) Run smoke test against production
 - Don't mark deploy as done until all 3 pass
 - Never assume merging or local verification equals deployment
+- After deploy is verified, update `docs/SUBSTACK_MCP_REFERENCE.md` to reflect any new/changed tools, endpoints, schemas, or capabilities. Bump the version, update the changelog, and ensure the Quick Reference Card is current.
 
 ### Sprint Protocol (MANDATORY)
 Each batch follows this exact sequence. No shortcuts.
@@ -75,8 +76,10 @@ Each batch follows this exact sequence. No shortcuts.
 #### Phase 3: Batch Checkpoint
 1. Update `docs/PROGRESS.md` — mark batch status, test count, notes
 2. Run full test suite — zero regressions
-3. `git diff --staged` — verify only batch files included
-4. Atomic git commit with batch reference (e.g., "Batch 1: server scaffold with health endpoint")
+3. Deploy to Fly.io → verify (fly status, health, smoke test)
+4. Update `docs/SUBSTACK_MCP_REFERENCE.md` — add/update tools, endpoints, schemas, bump version, update changelog
+5. `git diff --staged` — verify only batch files included
+6. Atomic git commit with batch reference (e.g., "Batch 1: server scaffold with health endpoint")
 
 #### Phase 4: Sprint Review (after all batches in a sprint complete)
 1. Launch code-reviewer agent teams with gates on all changed files
@@ -94,19 +97,22 @@ Each batch follows this exact sequence. No shortcuts.
 6. Present summary to user: files changed, tests added, gates passed, batch status
 
 ## Key Files
+- `docs/SUBSTACK_MCP_REFERENCE.md` — Complete MCP reference (tools, schemas, endpoints, workflows) — **update after every deploy**
 - `docs/PRD.md` — Product requirements document
 - `docs/PROGRESS.md` — Batch progress tracking
 - `docs/DECISIONS.md` — Architecture decision log
 - `shortwave-mcp-spec.md` — Original spec (reference only)
 - `substack-feeds.txt` — OPML export of 57 subscriptions
 
-### Planned Structure (to be created during implementation)
-- `src/server.py` — MCP server entry point
-- `src/substack_client.py` — Substack API client (httpx)
-- `src/dedup.py` — SQLite dedup cache
-- `src/summarizer.py` — Gemini Flash-Lite summarization
-- `src/tools/` — Tool implementations
-- `tests/` — pytest test suite
+### Project Structure
+- `src/server.py` — MCP server entry point (all tools registered)
+- `src/__main__.py` — uvicorn production entrypoint
+- `src/substack_client.py` — Substack API client (httpx, cookie auth, rate limiting)
+- `src/dedup.py` — SQLite dedup cache with schema versioning
+- `src/summarizer.py` — Gemini Flash-Lite summarization (async)
+- `src/tools/` — Tool implementations (12 tools)
+- `tests/unit/` — Unit tests (pytest + pytest-asyncio)
+- `tests/integration/` — Integration tests
 
 ## API Endpoints (Substack — Undocumented, HAR-Verified March 2026)
 - `GET /api/v1/user/profile/self` — Auth check (LIVE-CONFIRMED 200 OK, returns id/name/handle/bio)
@@ -119,6 +125,10 @@ Each batch follows this exact sequence. No shortcuts.
 - `GET /api/v1/posts/{slug}` — Single post (per-publication subdomain, CONFIRMED)
 - `GET /api/v1/posts/by-id/{postId}` — Single post by ID (HAR-CONFIRMED, no subdomain needed)
 - `GET /api/v1/publication/search?query={q}` — Publication search (CONFIRMED, no auth)
+- `GET /api/v1/activity-feed-web?filter={filter}` — Activity/notifications feed (HAR-CONFIRMED, filters: all, replies-and-mentions, restacks)
+- `POST /api/v1/post/{id}/reaction` — Like article (HAR-CONFIRMED, body: `{reaction: ❤, surface: reader, tabId: for-you}`)
+- `POST /api/v1/comment/{id}/reaction` — Like note (HAR-CONFIRMED, body: `{publication_id: null, reaction: ❤, tabId: for-you}`)
+- `POST /api/v1/activity/unread` — Mark notifications as read (HAR-CONFIRMED)
 - `GET /api/v1/activity/unread` — Lightweight auth validation (LIVE-CONFIRMED)
 
 ### Endpoint Verification Status
