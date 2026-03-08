@@ -1,7 +1,7 @@
 import os
 
-from mcp.server.auth.provider import AccessToken, TokenVerifier
 from mcp.server.fastmcp import FastMCP
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
@@ -17,31 +17,38 @@ from src.tools.subscription_feed import get_subscription_feed
 from src.tools.subscriptions import get_subscriptions
 
 
-class BearerTokenVerifier(TokenVerifier):
-    """Validates bearer tokens against MCP_API_KEY environment variable."""
+class BearerAuthMiddleware(BaseHTTPMiddleware):
+    """Simple bearer token auth matching the memory-mcp pattern.
+    Accepts: Authorization: Bearer <key> header OR ?key=<key> query param.
+    Skips /health endpoint.
+    """
 
-    def __init__(self, api_key: str):
+    def __init__(self, app, api_key: str):
+        super().__init__(app)
         self.api_key = api_key
 
-    async def verify_token(self, token: str) -> AccessToken | None:
-        if token == self.api_key:
-            return AccessToken(
-                token=token,
-                client_id="substack-mcp",
-                scopes=["read"],
+    async def dispatch(self, request: Request, call_next):
+        if request.url.path == "/health":
+            return await call_next(request)
+
+        header_token = (request.headers.get("authorization") or "").replace("Bearer ", "")
+        query_token = request.query_params.get("key", "")
+
+        if header_token != self.api_key and query_token != self.api_key:
+            return JSONResponse(
+                {"error": "Unauthorized — invalid or missing API key"},
+                status_code=401,
             )
-        return None
+
+        return await call_next(request)
 
 
-def create_bearer_verifier() -> BearerTokenVerifier | None:
-    api_key = os.environ.get("MCP_API_KEY")
-    if api_key:
-        return BearerTokenVerifier(api_key)
-    return None
+def create_bearer_verifier():
+    """Returns api_key string if MCP_API_KEY is set, None otherwise."""
+    return os.environ.get("MCP_API_KEY")
 
 
-_verifier = create_bearer_verifier()
-mcp = FastMCP("ss-navigator", token_verifier=_verifier)
+mcp = FastMCP("ss-navigator")
 
 
 @mcp.tool()
@@ -120,7 +127,11 @@ def get_transport() -> str:
 
 
 def create_starlette_app():
-    return mcp.streamable_http_app()
+    app = mcp.streamable_http_app()
+    api_key = create_bearer_verifier()
+    if api_key:
+        app.add_middleware(BearerAuthMiddleware, api_key=api_key)
+    return app
 
 
 if __name__ == "__main__":
