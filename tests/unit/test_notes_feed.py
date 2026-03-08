@@ -4,26 +4,49 @@ import httpx
 
 
 MOCK_NOTES_RESPONSE = {
-    "notes": [
+    "items": [
         {
-            "id": "note_6001",
-            "body": "This is a short note about AI agents",
-            "timestamp": "2026-03-06T10:00:00Z",
-            "publishedBylines": [{"name": "Note Author"}],
-            "reaction_count": 15,
-            "restack_count": 5,
-            "comment_count": 3,
-            "canonical_url": "https://substack.com/notes/note_6001",
+            "entity_key": "c-6001",
+            "type": "comment",
+            "post": None,
+            "comment": {
+                "id": 6001,
+                "name": "Note Author",
+                "handle": "noteauthor",
+                "body": "This is a short note about AI agents",
+                "date": "2026-03-06T10:00:00Z",
+                "reaction_count": 15,
+                "restacks": 5,
+                "children_count": 3,
+            },
+            "context": {"type": "note", "typeBucket": "notes"},
         },
         {
-            "id": "note_6002",
-            "body": "A low engagement note",
-            "timestamp": "2026-03-05T08:00:00Z",
-            "publishedBylines": [{"name": "Note Author 2"}],
-            "reaction_count": 2,
-            "restack_count": 0,
-            "comment_count": 1,
-            "canonical_url": "https://substack.com/notes/note_6002",
+            "entity_key": "c-6002",
+            "type": "comment",
+            "post": None,
+            "comment": {
+                "id": 6002,
+                "name": "Note Author 2",
+                "handle": "noteauthor2",
+                "body": "A low engagement note",
+                "date": "2026-03-05T08:00:00Z",
+                "reaction_count": 2,
+                "restacks": 0,
+                "children_count": 1,
+            },
+            "context": {"type": "note", "typeBucket": "notes"},
+        },
+        {
+            "entity_key": "p-9999",
+            "type": "post",
+            "post": {
+                "id": 9999,
+                "title": "A post mixed in the feed",
+                "post_date": "2026-03-06T09:00:00Z",
+            },
+            "comment": None,
+            "context": {"type": "post", "typeBucket": "posts"},
         },
     ],
 }
@@ -129,7 +152,7 @@ class TestNotesFeedDedup:
         from src.dedup import DedupCache
 
         cache = DedupCache(":memory:")
-        cache.insert("substack_note_note_6001", "url", "title", "source", "notes")
+        cache.insert("substack_note_6001", "url", "title", "source", "notes")
 
         mock_response = httpx.Response(
             200,
@@ -146,7 +169,7 @@ class TestNotesFeedDedup:
             result = await get_notes_feed()
 
         assert len(result) == 1
-        assert result[0]["id"] == "substack_note_note_6002"
+        assert result[0]["id"] == "substack_note_6002"
 
 
 class TestNotesFeedSinceFilter:
@@ -186,7 +209,7 @@ class TestNotesFeedEmpty:
         cache = DedupCache(":memory:")
         mock_response = httpx.Response(
             200,
-            json={"notes": []},
+            json={"items": []},
             request=httpx.Request("GET", "https://substack.com/api/v1/notes"),
         )
 

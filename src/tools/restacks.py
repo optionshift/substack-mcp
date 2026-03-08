@@ -95,7 +95,7 @@ async def get_restacks(
         }
 
     data = response.json()
-    posts = data.get("posts", [])
+    items = data.get("items", [])
     articles = []
 
     since_dt = None
@@ -105,19 +105,41 @@ async def get_restacks(
         except ValueError:
             pass
 
-    for post in posts:
+    for item in items:
         if len(articles) >= limit:
             break
 
-        parsed = _parse_article(post)
-        article_id = f"substack_post_{parsed['post_id']}"
+        post = item.get("post")
+        comment = item.get("comment")
 
-        if since_dt and parsed["published_at"]:
+        if post is not None:
+            parsed = _parse_article(post)
+            article_id = f"substack_post_{parsed['post_id']}"
+            timestamp = parsed["published_at"]
+            content = parsed["markdown"]
+        elif comment is not None:
+            note_id = str(comment.get("id", ""))
+            article_id = f"substack_note_{note_id}"
+            timestamp = comment.get("date", "")
+            content = comment.get("body", "")
+            parsed = {
+                "post_id": note_id,
+                "title": content[:100],
+                "author": comment.get("name", ""),
+                "publication": "",
+                "url": "",
+                "published_at": timestamp,
+                "markdown": content,
+            }
+        else:
+            continue
+
+        if since_dt and timestamp:
             try:
-                post_dt = datetime.fromisoformat(
-                    parsed["published_at"].replace("Z", "+00:00")
+                item_dt = datetime.fromisoformat(
+                    timestamp.replace("Z", "+00:00")
                 )
-                if post_dt < since_dt:
+                if item_dt < since_dt:
                     continue
             except ValueError:
                 pass
@@ -126,7 +148,7 @@ async def get_restacks(
             article_id=article_id,
             url=parsed["url"],
             title=parsed["title"],
-            source=parsed["publication"],
+            source=parsed.get("publication", ""),
             source_feed="restacks",
         )
         if not is_new:
@@ -136,22 +158,22 @@ async def get_restacks(
             "id": article_id,
             "title": parsed["title"],
             "author": parsed["author"],
-            "publication": parsed["publication"],
+            "publication": parsed.get("publication", ""),
             "url": parsed["url"],
-            "published_at": parsed["published_at"],
+            "published_at": timestamp,
             "platform": "substack",
             "is_new": True,
             "source_feed": "restacks",
         }
 
-        if summarize:
-            summary_result = await run_summarize(parsed["markdown"])
+        if post is not None and summarize:
+            summary_result = await run_summarize(content)
             if "raw_content" in summary_result:
                 article["raw_content"] = summary_result["raw_content"]
             else:
                 article.update(summary_result)
         else:
-            article["raw_content"] = parsed["markdown"][:RAW_CONTENT_CHARS]
+            article["raw_content"] = content[:RAW_CONTENT_CHARS]
 
         articles.append(article)
 

@@ -4,16 +4,22 @@ import httpx
 
 
 MOCK_RESTACKS_RESPONSE = {
-    "posts": [
+    "items": [
         {
-            "id": 5001,
-            "title": "Restacked Article",
-            "slug": "restacked-article",
-            "post_date": "2026-03-06T10:00:00Z",
-            "publishedBylines": [{"name": "Restack Author"}],
-            "publication": {"name": "Restack Pub", "subdomain": "restackpub"},
-            "canonical_url": "https://restackpub.substack.com/p/restacked-article",
-            "body_html": "<p>Restacked content</p>",
+            "entity_key": "p-5001",
+            "type": "post",
+            "post": {
+                "id": 5001,
+                "title": "Restacked Article",
+                "slug": "restacked-article",
+                "post_date": "2026-03-06T10:00:00Z",
+                "publishedBylines": [{"name": "Restack Author"}],
+                "publication": {"name": "Restack Pub", "subdomain": "restackpub"},
+                "canonical_url": "https://restackpub.substack.com/p/restacked-article",
+                "body_html": "<p>Restacked content</p>",
+            },
+            "comment": None,
+            "context": {"type": "restack"},
         },
     ],
 }

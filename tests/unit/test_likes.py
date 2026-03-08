@@ -4,16 +4,22 @@ import httpx
 
 
 MOCK_LIKES_RESPONSE = {
-    "posts": [
+    "items": [
         {
-            "id": 4001,
-            "title": "Liked Article",
-            "slug": "liked-article",
-            "post_date": "2026-03-06T10:00:00Z",
-            "publishedBylines": [{"name": "Liked Author"}],
-            "publication": {"name": "Liked Pub", "subdomain": "likedpub"},
-            "canonical_url": "https://likedpub.substack.com/p/liked-article",
-            "body_html": "<p>Liked content</p>",
+            "entity_key": "p-4001",
+            "type": "post",
+            "post": {
+                "id": 4001,
+                "title": "Liked Article",
+                "slug": "liked-article",
+                "post_date": "2026-03-06T10:00:00Z",
+                "publishedBylines": [{"name": "Liked Author"}],
+                "publication": {"name": "Liked Pub", "subdomain": "likedpub"},
+                "canonical_url": "https://likedpub.substack.com/p/liked-article",
+                "body_html": "<p>Liked content</p>",
+            },
+            "comment": None,
+            "context": {"type": "like"},
         },
     ],
 }

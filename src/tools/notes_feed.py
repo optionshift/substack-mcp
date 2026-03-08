@@ -5,7 +5,7 @@ import httpx
 from src.dedup import DedupCache
 from src.substack_client import create_client
 
-NOTES_ENDPOINT = "/api/v1/notes"
+NOTES_ENDPOINT = "/api/v1/reader/feed"
 HIGH_SIGNAL_LIKES = 10
 HIGH_SIGNAL_RESTACKS = 3
 
@@ -39,7 +39,9 @@ async def get_notes_feed(
     cache = get_cache()
 
     try:
-        response = await client.get(NOTES_ENDPOINT)
+        response = await client.get(
+            NOTES_ENDPOINT, params={"tab": "for-you", "type": "base"}
+        )
     except Exception as e:
         return {
             "error": True,
@@ -65,7 +67,7 @@ async def get_notes_feed(
         }
 
     data = response.json()
-    notes_data = data.get("notes", [])
+    items = data.get("items", [])
     notes = []
 
     since_dt = None
@@ -75,13 +77,18 @@ async def get_notes_feed(
         except ValueError:
             pass
 
-    for note in notes_data:
+    for item in items:
         if len(notes) >= limit:
             break
 
-        note_id = str(note.get("id", ""))
+        # Only process notes (comments), skip posts
+        comment = item.get("comment")
+        if comment is None:
+            continue
+
+        note_id = str(comment.get("id", ""))
         article_id = f"substack_note_{note_id}"
-        timestamp = note.get("timestamp", "")
+        timestamp = comment.get("date", "")
 
         if since_dt and timestamp:
             try:
@@ -95,32 +102,30 @@ async def get_notes_feed(
 
         is_new = cache.insert(
             article_id=article_id,
-            url=note.get("canonical_url", ""),
-            title=note.get("body", "")[:100],
+            url="",
+            title=comment.get("body", "")[:100],
             source="notes",
             source_feed="notes",
         )
         if not is_new:
             continue
 
-        bylines = note.get("publishedBylines", [])
-        author = bylines[0].get("name", "") if bylines else ""
-
-        likes = note.get("reaction_count", 0)
-        restacks = note.get("restack_count", 0)
-        comments = note.get("comment_count", 0)
+        author = comment.get("name", "")
+        likes = comment.get("reaction_count", 0)
+        restacks = comment.get("restacks", 0)
+        comments = comment.get("children_count", 0)
 
         high_signal = likes > HIGH_SIGNAL_LIKES or restacks > HIGH_SIGNAL_RESTACKS
 
         notes.append({
             "id": article_id,
             "author": author,
-            "content": note.get("body", ""),
+            "content": comment.get("body", ""),
             "timestamp": timestamp,
             "likes": likes,
             "restacks": restacks,
             "comments": comments,
-            "url": note.get("canonical_url", ""),
+            "url": "",
             "high_signal": high_signal,
         })
 
