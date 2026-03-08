@@ -109,23 +109,21 @@ Each batch follows this exact sequence. No shortcuts.
 - `tests/` — pytest test suite
 
 ## API Endpoints (Substack — Undocumented, HAR-Verified March 2026)
-- `GET /api/v1/user/profile/self` — Auth check (UNVERIFIED — HAR shows browser uses /user/{id}-{handle}/public_profile/self)
-- `GET /api/v1/reader/feed?tab=for-you&type=base` — FYP feed (HAR-CONFIRMED, returns items[] mixing posts+notes)
+- `GET /api/v1/user/profile/self` — Auth check (LIVE-CONFIRMED 200 OK, returns id/name/handle/bio)
+- `GET /api/v1/reader/feed?tab=for-you&type=base` — FYP feed (LIVE-CONFIRMED, returns items[] mixing posts+notes)
 - `GET /api/v1/reader/feed?tab=subscribed&type=secondary` — Subscription feed (HAR-CONFIRMED, same items[] format)
-- `GET /api/v1/subscriptions/page` — List subscriptions (HAR-CONFIRMED, /subscriptions 301-redirects here)
-- `GET /api/v1/notes?cursor={cursor}` — Notes feed (UNVERIFIED — notes appear inline in reader/feed in HAR)
-- `GET /api/v1/reader/feed/profile/{user_id}?types[]=like` — Likes (CONFIRMED)
-- `GET /api/v1/reader/feed/profile/{user_id}?types[]=restack` — Restacks (CONFIRMED)
+- `GET /api/v1/subscriptions/page` — List subscriptions (LIVE-CONFIRMED, /subscriptions 301-redirects here)
+- `GET /api/v1/notes` — **404 NOT FOUND** — Notes come inline via reader/feed as type=comment
+- `GET /api/v1/reader/feed/profile/{user_id}?types[]=like` — Likes (LIVE-CONFIRMED, items[] format)
+- `GET /api/v1/reader/feed/profile/{user_id}?types[]=restack` — Restacks (LIVE-CONFIRMED, items[] format)
 - `GET /api/v1/posts/{slug}` — Single post (per-publication subdomain, CONFIRMED)
 - `GET /api/v1/posts/by-id/{postId}` — Single post by ID (HAR-CONFIRMED, no subdomain needed)
 - `GET /api/v1/publication/search?query={q}` — Publication search (CONFIRMED, no auth)
-- `GET /api/v1/activity/unread` — Lightweight auth validation (HAR-CONFIRMED)
+- `GET /api/v1/activity/unread` — Lightweight auth validation (LIVE-CONFIRMED)
 
 ### Endpoint Verification Status
-HAR-CONFIRMED: reader/feed (FYP+subscriptions), subscriptions/page, posts/by-id, activity/unread, publication/search
-CONFIRMED (prior research): likes, restacks, archive, posts/{slug}
-UNVERIFIED: user/profile/self (auth check), notes (standalone endpoint)
-Cookie: Only substack.sid needed (not connect.sid). Expiry ~90 days.
+ALL ENDPOINTS LIVE-TESTED. Every tool's API path returns 200 OK with expected data.
+Cookie: Only substack.sid needed (not connect.sid). Expiry ~90 days. User ID: 383926424.
 
 ## Environment Variables
 - `SUBSTACK_SESSION_COOKIE` — Substack session cookie value

@@ -158,10 +158,23 @@ User captured two HAR files from live substack.com browsing:
 | 7 | httpx: added `follow_redirects=True` to handle 301 redirects | `src/substack_client.py` |
 | 8 | Navigator: updated api_quirks with HAR-verified endpoint info | `src/tools/navigator.py` |
 
-### Still Unverified (needs live testing)
-- Auth endpoint: `/api/v1/user/profile/self` (HAR shows browser uses different path)
-- Notes endpoint: `/api/v1/notes` (HAR shows notes inline in reader/feed)
-- Likes/restacks response shape: `data.get("posts", [])` (HAR didn't capture these endpoints)
+### Live API Test Results
+| Endpoint | Status | Action |
+|---|---|---|
+| `/api/v1/user/profile/self` | **200 OK** — returns full profile (id, name, handle, bio) | Auth check CONFIRMED working |
+| `/api/v1/notes` | **404 Not Found** | Rewrote to use reader/feed filtered for comments |
+| `/api/v1/reader/feed?tab=for-you&type=base` | **200 OK** | FYP CONFIRMED |
+| `/api/v1/subscriptions/page` | **200 OK** | Subscriptions CONFIRMED |
+| `/api/v1/activity/unread` | **200 OK** | Lightweight auth check available |
+| `/api/v1/reader/feed/profile/{id}?types[]=like` | **200 OK** — uses items[] format | Fixed parsing |
+| `/api/v1/reader/feed/profile/{id}?types[]=restack` | **200 OK** — uses items[] format | Fixed parsing |
+
+### Additional Fixes from Live Testing
+| # | Fix | Files Changed |
+|---|---|---|
+| 9 | Likes: parse items[] (posts + notes mixed) instead of posts[] | `src/tools/likes.py`, `tests/unit/test_likes.py` |
+| 10 | Restacks: same items[] fix | `src/tools/restacks.py`, `tests/unit/test_restacks.py` |
+| 11 | Notes: rewrote from /api/v1/notes (404) to reader/feed filtered for comments | `src/tools/notes_feed.py`, `tests/unit/test_notes_feed.py` |
 
 ### Test Results
 **121 tests passing, 0 failures** — all mock responses updated to match HAR-verified shapes
