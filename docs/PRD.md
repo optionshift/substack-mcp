@@ -273,8 +273,9 @@ Each batch follows the Sprint Protocol defined in CLAUDE.md: Plan → RED (tests
 ---
 
 ### Batch 2 — Auth Layer
-**Scope:** `ss_auth_check` tool, cookie handling, user_id extraction and caching.
+**Scope:** `ss_auth_check` tool, base HTTP client, cookie handling, user_id extraction and caching.
 **Files to create:**
+- `src/substack_client.py` — base Substack API client (httpx, cookie auth, rate limiting)
 - `src/tools/auth.py` — auth check tool
 - `tests/unit/test_auth.py` — auth test suite
 
@@ -294,9 +295,9 @@ Each batch follows the Sprint Protocol defined in CLAUDE.md: Plan → RED (tests
 ### Batch 3 — Subscriptions
 **Scope:** `ss_get_subscriptions` tool — simplest authenticated read, validates API client works.
 **Files to create:**
-- `src/substack_client.py` — base Substack API client (httpx, cookie auth, rate limiting)
 - `src/tools/subscriptions.py` — subscriptions tool
 - `tests/unit/test_subscriptions.py`
+**Depends on:** Batch 2 (`src/substack_client.py` — base HTTP client)
 
 **Spec:**
 - Endpoint: `GET /api/v1/subscriptions`
