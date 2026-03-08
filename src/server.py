@@ -2,7 +2,6 @@ import os
 
 from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
-from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
@@ -18,43 +17,14 @@ from src.tools.subscription_feed import get_subscription_feed
 from src.tools.subscriptions import get_subscriptions
 
 
-class BearerAuthMiddleware(BaseHTTPMiddleware):
-    """Simple bearer token auth matching the memory-mcp pattern.
-    Accepts: Authorization: Bearer <key> header OR ?key=<key> query param.
-    Skips /health endpoint.
-    """
-
-    def __init__(self, app, api_key: str):
-        super().__init__(app)
-        self.api_key = api_key
-
-    async def dispatch(self, request: Request, call_next):
-        if request.url.path == "/health":
-            return await call_next(request)
-
-        header_token = (request.headers.get("authorization") or "").replace("Bearer ", "")
-        query_token = request.query_params.get("key", "")
-
-        if header_token != self.api_key and query_token != self.api_key:
-            return JSONResponse(
-                {"error": "Unauthorized — invalid or missing API key"},
-                status_code=401,
-            )
-
-        return await call_next(request)
-
-
-def create_bearer_verifier():
-    """Returns api_key string if MCP_API_KEY is set, None otherwise."""
-    return os.environ.get("MCP_API_KEY")
-
+FLY_HOST = os.environ.get("FLY_APP_NAME", "ss-nav-3950b79a5cc7") + ".fly.dev"
 
 mcp = FastMCP(
     "ss-navigator",
     transport_security=TransportSecuritySettings(
         enable_dns_rebinding_protection=True,
         allowed_hosts=[
-            "substack-mcp.fly.dev",
+            FLY_HOST,
             "127.0.0.1:*",
             "localhost:*",
             "[::1]:*",
@@ -139,11 +109,7 @@ def get_transport() -> str:
 
 
 def create_starlette_app():
-    app = mcp.streamable_http_app()
-    api_key = create_bearer_verifier()
-    if api_key:
-        app.add_middleware(BearerAuthMiddleware, api_key=api_key)
-    return app
+    return mcp.streamable_http_app()
 
 
 if __name__ == "__main__":
