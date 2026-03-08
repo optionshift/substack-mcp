@@ -78,7 +78,7 @@
 | 2 — Auth | Complete | 13 | Live-test deferred (cookie empty). Sprint review: +3 tests (500 error, env var wiring). Response buffering fix. |
 | 3 — Subscriptions | Complete | 9 | Sprint review: +2 tests (custom_domain, rate limiting). custom_domain URL fix. |
 | 4 — Dedup Cache | Complete | 15 | Sprint review: exists() thread lock fix, list_by_feed() thread lock fix. |
-| 5 — Summarization | Not Started | — | Moved before feed tools (per D003 — feed tools default summarize=true) |
+| 5 — Summarization | Complete | 13 | Gemini Flash-Lite via google-genai, 15K truncation, tag validation, relevance clamping, graceful fallback |
 | 6 — FYP Feed | Not Started | — | — |
 | 7 — Sub Feed | Not Started | — | — |
 | 8 — Post Content | Not Started | — | — |
