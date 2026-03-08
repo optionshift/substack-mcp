@@ -79,7 +79,7 @@
 | 3 — Subscriptions | Complete | 9 | Sprint review: +2 tests (custom_domain, rate limiting). custom_domain URL fix. |
 | 4 — Dedup Cache | Complete | 15 | Sprint review: exists() thread lock fix, list_by_feed() thread lock fix. |
 | 5 — Summarization | Complete | 13 | Gemini Flash-Lite via google-genai, 15K truncation, tag validation, relevance clamping, graceful fallback |
-| 6 — FYP Feed | Not Started | — | — |
+| 6 — FYP Feed | Complete | 10 | Endpoint, dedup, since filter, summarize toggle, auth errors. Registered in server.py. |
 | 7 — Sub Feed | Not Started | — | — |
 | 8 — Post Content | Not Started | — | — |
 | 9 — Likes/Restacks | Not Started | — | — |
