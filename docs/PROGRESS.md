@@ -76,7 +76,7 @@
 |---|---|---|---|
 | 1 — Scaffold | Complete | 11 | pyproject.toml, src/server.py, __init__.py files, test_server.py |
 | 2 — Auth | Complete | 10 | Live-test deferred (SUBSTACK_SESSION_COOKIE empty). substack_client.py + tools/auth.py |
-| 3 — Subscriptions | Not Started | — | — |
+| 3 — Subscriptions | Complete | 7 | tools/subscriptions.py |
 | 4 — Dedup Cache | Not Started | — | — |
 | 5 — Summarization | Not Started | — | Moved before feed tools (per D003 — feed tools default summarize=true) |
 | 6 — FYP Feed | Not Started | — | — |
