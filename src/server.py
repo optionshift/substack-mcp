@@ -3,7 +3,7 @@ import os
 from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from src.tools.auth import auth_check
 from src.tools.activity_feed import get_activity_feed
@@ -21,9 +21,10 @@ from src.tools.subscriptions import get_subscriptions
 
 FLY_HOST = os.environ.get("FLY_APP_NAME", "ss-nav-3950b79a5cc7") + ".fly.dev"
 
-mcp = FastMCP(
-    "ss-navigator",
-    transport_security=TransportSecuritySettings(
+
+def _create_mcp():
+    """Create FastMCP instance, conditionally enabling OAuth if OAUTH_PASSWORD is set."""
+    transport_security = TransportSecuritySettings(
         enable_dns_rebinding_protection=True,
         allowed_hosts=[
             FLY_HOST,
@@ -31,8 +32,75 @@ mcp = FastMCP(
             "localhost:*",
             "[::1]:*",
         ],
-    ),
-)
+    )
+
+    oauth_password = os.environ.get("OAUTH_PASSWORD")
+    if oauth_password:
+        from mcp.server.auth.settings import AuthSettings, ClientRegistrationOptions, RevocationOptions
+        from src.oauth.db import OAuthDB
+        from src.oauth.provider import SubstackOAuthProvider
+
+        provider = SubstackOAuthProvider(
+            db=OAuthDB(),
+            password=oauth_password,
+            issuer_url=f"https://{FLY_HOST}",
+        )
+        server = FastMCP(
+            "ss-navigator",
+            auth_server_provider=provider,
+            auth=AuthSettings(
+                issuer_url=f"https://{FLY_HOST}",
+                resource_server_url=f"https://{FLY_HOST}",
+                client_registration_options=ClientRegistrationOptions(enabled=True),
+                revocation_options=RevocationOptions(enabled=True),
+            ),
+            transport_security=transport_security,
+        )
+        return server, provider
+
+    return FastMCP("ss-navigator", transport_security=transport_security), None
+
+
+mcp, _oauth_provider = _create_mcp()
+
+
+# -- OAuth login route (only registered if OAuth is enabled) --
+
+if _oauth_provider:
+    from src.oauth.pages import login_page
+
+    @mcp.custom_route("/login", methods=["GET", "POST"])
+    async def login_endpoint(request: Request) -> HTMLResponse | RedirectResponse:
+        if request.method == "GET":
+            request_id = request.query_params.get("request_id", "")
+            return HTMLResponse(login_page(
+                client_name="MCP Client",
+                request_id=request_id,
+            ))
+
+        form = await request.form()
+        request_id = str(form.get("request_id", ""))
+        password = str(form.get("password", ""))
+
+        if not _oauth_provider.verify_password(password):
+            return HTMLResponse(login_page(
+                client_name="MCP Client",
+                request_id=request_id,
+                error="Invalid password. Please try again.",
+            ))
+
+        redirect_url = _oauth_provider.create_auth_code_from_pending(request_id)
+        if redirect_url is None:
+            return HTMLResponse(login_page(
+                client_name="MCP Client",
+                request_id=request_id,
+                error="Authorization request expired. Please try again.",
+            ))
+
+        return RedirectResponse(url=redirect_url, status_code=302)
+
+
+# -- Tools --
 
 
 @mcp.tool()
@@ -105,6 +173,9 @@ async def ss_get_activity_feed(filter: str = "all", limit: int = 20) -> dict:
 async def ss_like(id: str, type: str) -> dict:
     """Like/heart an article or note. type: 'post' or 'note'."""
     return await like_content(id=id, type=type)
+
+
+# -- Health & transport --
 
 
 def health_check() -> dict:

@@ -1,4 +1,4 @@
-# Substack MCP Server v1.1 - Complete Reference
+# Substack MCP Server v1.2 - Complete Reference
 
 > **Purpose:** Complete reference documentation for the Substack MCP Server. Designed for LLM consumption to understand all capabilities, tools, and patterns for interacting with Substack's undocumented API.
 
@@ -46,7 +46,7 @@ Optimized for **Option Shift's content engine** — daily ingestion of Substack 
 | Property | Value |
 |----------|-------|
 | Name | ss-navigator |
-| Version | 1.1.0 |
+| Version | 1.2.0 |
 | Protocol | MCP 2025-03-26 |
 | Transport | StreamableHTTP (production) or stdio (local) |
 | Language | Python 3.12+ |
@@ -76,12 +76,17 @@ Optimized for **Option Shift's content engine** — daily ingestion of Substack 
 
 ```
 src/
-├── server.py              # MCP server entry point (12 tools registered)
+├── server.py              # MCP server entry point (12 tools, conditional OAuth)
 ├── __main__.py            # uvicorn production entrypoint (0.0.0.0:8080)
 ├── __init__.py
 ├── substack_client.py     # httpx client (cookie auth, 1 req/sec rate limiting)
 ├── dedup.py               # SQLite dedup cache with schema versioning
 ├── summarizer.py          # Gemini Flash-Lite summarization (async)
+├── oauth/
+│   ├── __init__.py
+│   ├── db.py              # SQLite OAuth tables (clients, codes, tokens)
+│   ├── provider.py        # OAuthAuthorizationServerProvider implementation
+│   └── pages.py           # HTML login page
 └── tools/
     ├── __init__.py
     ├── navigator.py       # Discovery tool (domain knowledge, workflows)
@@ -550,6 +555,7 @@ All errors follow a standard shape:
 |----------|----------|-------------|
 | SUBSTACK_SESSION_COOKIE | Yes | Substack `substack.sid` cookie value |
 | GOOGLE_AI_API_KEY | Yes | Gemini Flash-Lite API key |
+| OAUTH_PASSWORD | No | Enables OAuth 2.1 + PKCE when set. Single-user password for the login page. |
 | MCP_ENV | No | `production` for StreamableHTTP, else stdio |
 | SQLITE_PATH | No | SQLite db path (default: `/data/ss_navigator.db`) |
 
@@ -566,18 +572,41 @@ All errors follow a standard shape:
 
 ### 6.3 HTTP Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/mcp` | POST | StreamableHTTP JSON-RPC requests |
-| `/health` | GET | Health check → `{"status":"ok","version":"1.0.0"}` |
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/mcp` | POST | Bearer | StreamableHTTP JSON-RPC requests |
+| `/health` | GET | Public | Health check → `{"status":"ok","version":"1.0.0"}` |
+| `/login` | GET/POST | Public | OAuth login page (password form) |
+| `/authorize` | GET/POST | Public | OAuth authorization endpoint (FastMCP) |
+| `/token` | POST | Public | OAuth token exchange (FastMCP) |
+| `/register` | POST | Public | Dynamic client registration (FastMCP) |
+| `/revoke` | POST | Public | Token revocation (FastMCP) |
+| `/.well-known/oauth-authorization-server` | GET | Public | OAuth server metadata (RFC 8414) |
 
-### 6.4 Secrets (1Password vault: substack-mcp)
+### 6.4 OAuth 2.1 + PKCE
+
+Enabled when `OAUTH_PASSWORD` env var is set. Uses FastMCP's built-in `OAuthAuthorizationServerProvider`.
+
+**Flow:**
+1. Client discovers endpoints via `/.well-known/oauth-authorization-server`
+2. Client registers via `POST /register` → gets `client_id`
+3. Client sends `GET /authorize?client_id=...&code_challenge=...&redirect_uri=...`
+4. User sees login page at `/login`, enters password
+5. On success, redirects to `redirect_uri?code=...&state=...`
+6. Client exchanges code at `POST /token` with PKCE `code_verifier`
+7. Client uses `Authorization: Bearer <token>` for all `/mcp` requests
+
+**Token lifetimes:** Auth code 5min, access token 1hr, refresh token 30 days (rotated).
+
+**Storage:** OAuth clients, codes, and tokens stored in same SQLite DB as dedup cache (`/data/ss_navigator.db`), migration v2.
+
+### 6.5 Secrets (1Password vault: substack-mcp)
 
 | Secret | Purpose |
 |--------|---------|
 | SUBSTACK_SESSION_COOKIE | Substack auth (~90 day expiry) |
 | GOOGLE_AI_API_KEY | Gemini Flash-Lite summarization |
-| MCP_API_KEY | Stored but unused (Claude Desktop doesn't support bearer) |
+| OAUTH_PASSWORD | OAuth login page password |
 
 ### 6.5 Deploy Commands
 
@@ -714,10 +743,11 @@ Validate:   ss_auth_check (caches user_id)
 
 ---
 
-*Document Version: 1.1.0*
-*Last Updated: March 8, 2026*
-*Compatible with: Substack MCP Server v1.1*
+*Document Version: 1.2.0*
+*Last Updated: March 15, 2026*
+*Compatible with: Substack MCP Server v1.2*
 
 ### Changelog
+- **1.2.0**: Added OAuth 2.1 + PKCE authentication via FastMCP's built-in OAuthAuthorizationServerProvider. Single-user password-based flow with dynamic client registration, PKCE S256, token rotation. SQLite-backed (migration v2). Enabled when OAUTH_PASSWORD env var is set. Allows Perplexity and other MCP clients to authenticate via standard OAuth flow.
 - **1.1.0**: Added `ss_get_activity_feed` (engagement notifications, 3 filters, enriched senders). Added `ss_like` (first write operation). 12 tools total, 145 tests. HAR-verified all endpoints.
 - **1.0.0**: Initial release. 10 read tools, server-side dedup + summarization, Fly.io deployment. 121 tests.
