@@ -129,6 +129,7 @@ Each batch follows this exact sequence. No shortcuts.
 - `POST /api/v1/post/{id}/reaction` — Like article (HAR-CONFIRMED, body: `{reaction: ❤, surface: reader, tabId: for-you}`)
 - `POST /api/v1/comment/{id}/reaction` — Like note (HAR-CONFIRMED, body: `{publication_id: null, reaction: ❤, tabId: for-you}`)
 - `POST /api/v1/activity/unread` — Mark notifications as read (HAR-CONFIRMED)
+- `GET /api/v1/post/search?query={q}&page={n}&includePlatformResults={bool}&filter={scope}&dateRange={range}` — Article search (HAR-CONFIRMED, returns results[] with post data)
 - `GET /api/v1/activity/unread` — Lightweight auth validation (LIVE-CONFIRMED)
 
 ### Endpoint Verification Status

@@ -13,7 +13,7 @@ from src.summarizer import summarize as run_summarize
 from src.tools.subscriptions import get_subscriptions
 
 SUB_ENDPOINT = "/api/v1/reader/feed"
-RAW_CONTENT_CHARS = 2000
+CONTENT_HINT = "Use ss_get_post_content with this URL to read the full article"
 
 _cache_instance: DedupCache | None = None
 
@@ -162,6 +162,7 @@ async def _fetch_via_rss(
                 "platform": "substack",
                 "is_new": True,
                 "source_feed": "subscription",
+                "hint": CONTENT_HINT,
             }
 
             if summarize:
@@ -171,7 +172,7 @@ async def _fetch_via_rss(
                 else:
                     article.update(summary_result)
             else:
-                article["raw_content"] = parsed["markdown"][:RAW_CONTENT_CHARS]
+                article["content"] = parsed["markdown"]
 
             articles.append(article)
 
@@ -257,6 +258,7 @@ async def get_subscription_feed(
             "platform": "substack",
             "is_new": True,
             "source_feed": "subscription",
+            "hint": CONTENT_HINT,
         }
 
         if summarize:
@@ -266,7 +268,7 @@ async def get_subscription_feed(
             else:
                 article.update(summary_result)
         else:
-            article["raw_content"] = parsed["markdown"][:RAW_CONTENT_CHARS]
+            article["content"] = parsed["markdown"]
 
         articles.append(article)
 

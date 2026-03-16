@@ -159,3 +159,72 @@ class TestLikesFeed:
 
         assert result["error"] is True
         assert result["code"] == "AUTH_EXPIRED"
+
+    @pytest.mark.asyncio
+    async def test_hint_field_present(self):
+        from src.tools.likes import get_likes
+        from src.dedup import DedupCache
+
+        cache = DedupCache(":memory:")
+        mock_response = httpx.Response(
+            200,
+            json=MOCK_LIKES_RESPONSE,
+            request=httpx.Request("GET", "https://substack.com/api/v1/reader/feed/profile/12345"),
+        )
+
+        with patch("src.tools.likes.get_client") as mock_gc, \
+             patch("src.tools.likes.get_cache", return_value=cache), \
+             patch("src.tools.likes.get_cached_user_id", return_value="12345"), \
+             patch("src.tools.likes.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+            mock_client = AsyncMock()
+            mock_client.get.return_value = mock_response
+            mock_gc.return_value = mock_client
+
+            result = await get_likes()
+
+        for article in result:
+            assert "hint" in article
+            assert "ss_get_post_content" in article["hint"]
+
+    @pytest.mark.asyncio
+    async def test_content_not_truncated_when_summarize_false(self):
+        from src.tools.likes import get_likes
+        from src.dedup import DedupCache
+
+        long_html = "<p>" + "x" * 5000 + "</p>"
+        long_response = {
+            "items": [{
+                "entity_key": "p-8001",
+                "type": "post",
+                "post": {
+                    "id": 8001,
+                    "title": "Long Liked Article",
+                    "slug": "long-liked",
+                    "post_date": "2026-03-06T10:00:00Z",
+                    "publishedBylines": [{"name": "Author"}],
+                    "publication": {"name": "Pub", "subdomain": "pub"},
+                    "canonical_url": "https://pub.substack.com/p/long-liked",
+                    "body_html": long_html,
+                },
+                "comment": None,
+                "context": {"type": "like"},
+            }],
+        }
+
+        cache = DedupCache(":memory:")
+        mock_response = httpx.Response(
+            200,
+            json=long_response,
+            request=httpx.Request("GET", "https://substack.com/api/v1/reader/feed/profile/12345"),
+        )
+
+        with patch("src.tools.likes.get_client") as mock_gc, \
+             patch("src.tools.likes.get_cache", return_value=cache), \
+             patch("src.tools.likes.get_cached_user_id", return_value="12345"):
+            mock_client = AsyncMock()
+            mock_client.get.return_value = mock_response
+            mock_gc.return_value = mock_client
+
+            result = await get_likes(summarize=False)
+
+        assert len(result[0]["content"]) > 2000

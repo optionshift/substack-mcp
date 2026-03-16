@@ -8,7 +8,7 @@ from src.substack_client import create_client
 from src.summarizer import summarize as run_summarize
 
 FYP_ENDPOINT = "/api/v1/reader/feed"
-RAW_CONTENT_CHARS = 2000
+CONTENT_HINT = "Use ss_get_post_content with this URL to read the full article"
 
 _cache_instance: DedupCache | None = None
 
@@ -148,6 +148,7 @@ async def get_fyp_feed(
             "platform": "substack",
             "is_new": True,
             "source_feed": "fyp",
+            "hint": CONTENT_HINT,
         }
 
         if summarize:
@@ -157,7 +158,7 @@ async def get_fyp_feed(
             else:
                 article.update(summary_result)
         else:
-            article["raw_content"] = parsed["markdown"][:RAW_CONTENT_CHARS]
+            article["content"] = parsed["markdown"]
 
         articles.append(article)
 

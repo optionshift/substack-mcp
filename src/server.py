@@ -15,6 +15,7 @@ from src.tools.notes_feed import get_notes_feed
 from src.tools.post_content import get_post_content
 from src.tools.restacks import get_restacks
 from src.tools.search import search_publications
+from src.tools.search_posts import search_posts
 from src.tools.subscription_feed import get_subscription_feed
 from src.tools.subscriptions import get_subscriptions
 
@@ -140,8 +141,8 @@ async def ss_get_notes_feed(limit: int = 30, since: str | None = None) -> list |
 
 
 @mcp.tool()
-async def ss_get_post_content(url: str | None = None, summarize: bool = True) -> dict:
-    """Get full article content by URL with optional summarization."""
+async def ss_get_post_content(url: str | None = None, summarize: bool = False) -> dict:
+    """Read the full text of a Substack article. Use this after discovering articles via feed or search tools to get the complete content for deep research. Set summarize=True to also get a structured summary alongside the full text."""
     return await get_post_content(url=url, summarize=summarize)
 
 
@@ -152,8 +153,20 @@ async def ss_get_subscription_feed(limit: int = 30, since: str | None = None, su
 
 
 @mcp.tool()
+async def ss_search_posts(
+    query: str,
+    page: int = 0,
+    filter: str = "all",
+    date_range: str | None = None,
+    limit: int = 20,
+) -> list | dict:
+    """Search for Substack articles by keyword. Returns article previews with metadata. Supports filtering by time (day/week/month) and scope (all/subscribed). Use ss_get_post_content with a result URL to read the full article."""
+    return await search_posts(query=query, page=page, filter=filter, date_range=date_range, limit=limit)
+
+
+@mcp.tool()
 async def ss_search_publications(query: str, limit: int = 10) -> list | dict:
-    """Search for Substack publications by keyword (no auth required)."""
+    """Search for Substack publications/newsletters by keyword. Returns publication profiles. Use ss_search_posts to find articles instead."""
     return await search_publications(query=query, limit=limit)
 
 

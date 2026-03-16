@@ -6,7 +6,7 @@ import markdownify
 from src.dedup import DedupCache
 from src.summarizer import summarize as run_summarize
 
-RAW_CONTENT_CHARS = 2000
+CONTENT_HINT = "Use ss_get_post_content with this URL to read the full article"
 
 _cache_instance: DedupCache | None = None
 
@@ -42,7 +42,7 @@ async def fetch_post(url: str) -> httpx.Response:
 
 async def get_post_content(
     url: str | None = None,
-    summarize: bool = True,
+    summarize: bool = False,
 ) -> dict:
     if not url:
         return {
@@ -116,13 +116,12 @@ async def get_post_content(
         "source_feed": "post_content",
     }
 
+    # Always include full content
+    article["content"] = markdown
+
     if summarize:
         summary_result = await run_summarize(markdown)
-        if "raw_content" in summary_result:
-            article["raw_content"] = summary_result["raw_content"]
-        else:
+        if "raw_content" not in summary_result:
             article.update(summary_result)
-    else:
-        article["raw_content"] = markdown[:RAW_CONTENT_CHARS]
 
     return article

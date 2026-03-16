@@ -89,6 +89,9 @@
 | 13 — Deploy | Complete | — | Dockerfile, fly.toml, __main__.py. Deployed to ss-nav-3950b79a5cc7.fly.dev. No auth (obscure URL). |
 | 14 — Like | Complete | 8 | First write op. POST /post/{id}/reaction + /comment/{id}/reaction. Added post() to SubstackClient. 129 total tests. |
 | 15 — Activity Feed | Complete | 16 | HAR-verified endpoint. 3 filters (all, replies-and-mentions, restacks). Enriched senders/posts/comments/pubs. 145 total tests. |
+| 16 — Content Architecture | Complete | 9 | Two-tier pattern: feeds return summaries with hint, ss_get_post_content returns full markdown. Removed 2000-char truncation. 154 total tests. |
+| 17 — Article Search | Complete | 17 | New ss_search_posts tool via /api/v1/post/search. Time/scope filters, pagination, dedup, input validation. 171 total tests. |
+| 18 — Sprint Review | Complete | — | Code review (6 findings, 5 fixed). Summarizer key allowlist, notes hint fix, search validation. |
 
 ---
 
@@ -304,3 +307,35 @@ Tool joins activity items with users/posts/comments/pubs arrays server-side, ret
 
 ### Test Results
 **145 tests passing, 0 failures** (16 new activity feed tests)
+
+---
+
+## Sprint 4 — Deep Research Enablement (March 15, 2026)
+
+### Problem
+MCP server blocked Perplexity/Claude from deep research: full article content never returned (2000-char truncation), no article search, no signal for LLMs to get full text.
+
+### Batch 16 — Content Architecture Fix
+- Removed `RAW_CONTENT_CHARS = 2000` from all 5 content tools
+- `ss_get_post_content`: default `summarize=False`, always returns full `content` field
+- Feed tools: added `hint` field pointing to `ss_get_post_content`
+- Two-tier pattern: Tier 1 (feeds/search → summaries) → Tier 2 (post_content → full text)
+
+### Batch 17 — Article Search Tool
+- New `ss_search_posts` using HAR-verified `GET /api/v1/post/search`
+- Filters: `filter` (all/subscribed), `date_range` (day/week/month), `page` (pagination)
+- Returns article previews with metadata, wordcount, reactions, restacks
+- Dedup: insert but don't skip (search results always returned)
+- Input validation on filter and date_range values
+
+### Batch 18 — Sprint Review
+**Code review findings (6 total, 5 fixed):**
+1. **FIXED** — Summarizer could clobber caller fields via `article.update()`. Added key allowlist in `summarizer.py`.
+2. **FIXED** — Notes in likes/restacks got misleading `hint` (URL is empty). Now only set hint when URL is present.
+3. **FIXED** — `search_posts.py` had no input validation on `filter`/`date_range`. Added `VALID_FILTERS` and `VALID_DATE_RANGES` validation.
+4. **FIXED** — `search_posts.py` missing dedup cache. Added `DedupCache` with insert-but-don't-skip pattern.
+5. **FIXED** — `search_posts.py` missing `is_new` field. Added from dedup result.
+6. **NOTED** — `post_content.py` uses raw `httpx.AsyncClient()` without auth or rate limiting. Pre-existing, not Sprint 4 regression. Deferred to future batch.
+
+### Test Results
+**171 tests passing, 0 failures** (+26 from baseline of 145)

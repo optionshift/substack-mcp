@@ -8,7 +8,7 @@ from src.substack_client import create_client
 from src.summarizer import summarize as run_summarize
 from src.tools.auth import get_cached_user_id
 
-RAW_CONTENT_CHARS = 2000
+CONTENT_HINT = "Use ss_get_post_content with this URL to read the full article"
 
 _cache_instance: DedupCache | None = None
 
@@ -166,6 +166,9 @@ async def get_likes(
             "source_feed": "likes",
         }
 
+        if parsed["url"]:
+            article["hint"] = CONTENT_HINT
+
         if post is not None and summarize:
             summary_result = await run_summarize(content)
             if "raw_content" in summary_result:
@@ -173,7 +176,7 @@ async def get_likes(
             else:
                 article.update(summary_result)
         else:
-            article["raw_content"] = content[:RAW_CONTENT_CHARS]
+            article["content"] = content
 
         articles.append(article)
 

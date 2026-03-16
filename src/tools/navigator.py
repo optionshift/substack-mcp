@@ -29,15 +29,19 @@ TOOLS = [
     },
     {
         "name": "ss_get_post_content",
-        "description": "Full article by URL. HTML→Markdown conversion. Does not skip seen articles. Params: url, summarize.",
+        "description": "Read the FULL text of any article by URL. Use this after discovering articles via feed or search tools. Returns complete markdown. Set summarize=True for structured summary alongside full text. Params: url, summarize (default: False).",
     },
     {
         "name": "ss_get_subscriptions",
         "description": "List all followed publications with metadata (name, subdomain, RSS URL).",
     },
     {
+        "name": "ss_search_posts",
+        "description": "Search for articles by keyword. Supports time filters (day/week/month) and scope (all/subscribed). Returns previews — use ss_get_post_content for full text. Params: query, page, filter, date_range, limit.",
+    },
+    {
         "name": "ss_search_publications",
-        "description": "Search for publications by keyword. No auth required. Params: query, limit.",
+        "description": "Search for publications/newsletters by keyword. Params: query, limit.",
     },
     {
         "name": "ss_get_activity_feed",
@@ -69,6 +73,17 @@ WORKFLOWS = [
             "1. Read ingested articles from Notion (already stored by 7am task)",
             "2. ss_get_post_content(url=...) — deep-read high-relevance articles",
             "3. Draft content using article summaries, key quotes, and angles",
+        ],
+    },
+    {
+        "name": "Two-Tier Deep Research",
+        "description": "Discover articles via feeds/search (Tier 1: summaries), then read full content (Tier 2: complete text).",
+        "steps": [
+            "1. ss_auth_check — validate cookie",
+            "2. Use feed tools (ss_get_fyp_feed, ss_get_subscription_feed) or ss_search_posts to discover articles — returns summaries with hints",
+            "3. Pick interesting articles from results",
+            "4. ss_get_post_content(url=article_url) — returns complete article markdown for deep reading",
+            "5. Repeat step 4 for each article you want to read in full",
         ],
     },
 ]
@@ -109,6 +124,8 @@ def get_navigator() -> dict:
             "Activity feed returns denormalized data: activityItems[] + users[] + posts[] + comments[] + pubs[] for client-side join.",
             "Activity types: note_like, post_like, restack, restack_quote, note_reply, viral_gift_granted.",
             "Mark activity as read: POST /api/v1/activity/unread with {after: ISO timestamp}.",
+            "Article search: GET /api/v1/post/search?query={q}&page={n}&includePlatformResults={bool}&filter={all|subscribed}&dateRange={day|week|month}.",
+            "Article search returns: title, subtitle, truncated_body_text, wordcount, reactions, canonical_url — use ss_get_post_content for full text.",
             "Rate limit: 1 request/second enforced server-side.",
         ],
     }

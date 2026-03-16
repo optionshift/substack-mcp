@@ -1,4 +1,4 @@
-# Substack MCP Server v1.2 - Complete Reference
+# Substack MCP Server v1.3 - Complete Reference
 
 > **Purpose:** Complete reference documentation for the Substack MCP Server. Designed for LLM consumption to understand all capabilities, tools, and patterns for interacting with Substack's undocumented API.
 
@@ -46,13 +46,13 @@ Optimized for **Option Shift's content engine** — daily ingestion of Substack 
 | Property | Value |
 |----------|-------|
 | Name | ss-navigator |
-| Version | 1.2.0 |
+| Version | 1.3.0 |
 | Protocol | MCP 2025-03-26 |
 | Transport | StreamableHTTP (production) or stdio (local) |
 | Language | Python 3.12+ |
 | Framework | FastMCP (`mcp[server]`) |
-| Tools | 12 (10 read + 1 write + 1 navigator) |
-| Tests | 145 (pytest + pytest-asyncio) |
+| Tools | 13 (11 read + 1 write + 1 navigator) |
+| Tests | 171 (pytest + pytest-asyncio) |
 | Deployment | Fly.io (LAX region) |
 
 ---
@@ -310,19 +310,21 @@ Get user's restacked/shared posts (highest signal). Requires cached `user_id`.
 
 ### Content Suite
 
-#### 3.8 ss_get_post_content — Full Article
+#### 3.8 ss_get_post_content — Full Article (Deep Read)
 
-Get full article content by URL with HTML→Markdown conversion and optional summarization.
+Read the full text of a Substack article. Use this after discovering articles via feed or search tools to get the complete content for deep research. Returns complete markdown — not truncated.
 
 **Parameters:**
 | Name | Type | Required | Default | Description |
 |------|------|----------|---------|-------------|
 | url | str | Yes | - | Full Substack article URL |
-| summarize | bool | No | true | Gemini summarization |
+| summarize | bool | No | false | Set true to also get Gemini summary alongside full text |
 
 **Endpoint:** `GET https://{subdomain}.substack.com/api/v1/posts/{slug}`
 
-**Returns:** Single article object with full markdown content.
+**Returns:** Single article object with full `content` field (complete markdown). When `summarize=True`, also includes `summary`, `tags`, `relevance`, `key_quote`, `angle`.
+
+**Two-Tier Pattern:** Feed tools return summaries with a `hint` field pointing to this tool. Call this tool with the article URL to get the full text.
 
 **Dedup exception:** Does NOT skip already-seen articles, but DOES insert into `seen_articles` to prevent re-appearance in feed pulls.
 
@@ -354,9 +356,47 @@ List all followed Substack publications with metadata.
 
 ---
 
-#### 3.10 ss_search_publications — Publication Search
+#### 3.10 ss_search_posts — Article Search
 
-Search for Substack publications by keyword. No auth required.
+Search for Substack articles by keyword with time and scope filters. Returns article previews — use `ss_get_post_content` with the result URL to read the full article.
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| query | str | Yes | - | Search keyword |
+| page | int | No | 0 | Pagination (0-indexed) |
+| filter | str | No | "all" | `all` (all Substack) or `subscribed` (your subscriptions only) |
+| date_range | str | No | None | `day`, `week`, or `month` |
+| limit | int | No | 20 | Max results |
+
+**Endpoint:** `GET /api/v1/post/search?query={q}&page={n}&includePlatformResults={bool}&filter={scope}&dateRange={range}`
+
+**Returns:** Array of article preview objects:
+```json
+{
+  "id": "substack_post_189918781",
+  "title": "Article Title",
+  "subtitle": "Subtitle text",
+  "author": "Author Name",
+  "url": "https://pub.substack.com/p/article-slug",
+  "published_at": "2026-03-06T05:08:36.227Z",
+  "preview": "Truncated body text...",
+  "wordcount": 1219,
+  "reactions": {"❤": 3},
+  "restacks": 2,
+  "comment_count": 0,
+  "is_new": true,
+  "hint": "Use ss_get_post_content with this URL to read the full article"
+}
+```
+
+**Auth:** Required. **Dedup:** Insert but don't skip (search results always returned).
+
+---
+
+#### 3.11 ss_search_publications — Publication Search
+
+Search for Substack publications/newsletters by keyword.
 
 **Parameters:**
 | Name | Type | Required | Default | Description |
@@ -704,9 +744,10 @@ ss_get_subscription_feed — Subscription feed (chronological, RSS fallback)
 ss_get_notes_feed       — Notes feed (short-form, high_signal flagging)
 ss_get_likes            — Liked content (high signal, needs user_id)
 ss_get_restacks         — Restacked content (highest signal, needs user_id)
-ss_get_post_content     — Full article by URL (HTML→Markdown)
+ss_get_post_content     — Full article by URL (deep read, no truncation)
 ss_get_subscriptions    — List followed publications
-ss_search_publications  — Search publications (no auth)
+ss_search_posts         — Search articles by keyword (time/scope filters)
+ss_search_publications  — Search publications/newsletters
 ss_get_activity_feed    — Who engaged with your content
 ss_like                 — Like/heart a post or note
 ```
@@ -719,7 +760,8 @@ GET  /api/v1/reader/feed?tab=subscribed&type=secondary      Subscription feed
 GET  /api/v1/subscriptions/page                             Publication list
 GET  /api/v1/reader/feed/profile/{user_id}?types[]=like     Likes
 GET  /api/v1/reader/feed/profile/{user_id}?types[]=restack  Restacks
-GET  /api/v1/publication/search?query={q}                   Search (no auth)
+GET  /api/v1/post/search?query={q}&page={n}&filter={scope}   Article search
+GET  /api/v1/publication/search?query={q}                   Publication search
 GET  /api/v1/activity-feed-web?filter={filter}              Activity feed
 POST /api/v1/post/{id}/reaction                             Like article
 POST /api/v1/comment/{id}/reaction                          Like note
@@ -748,6 +790,7 @@ Validate:   ss_auth_check (caches user_id)
 *Compatible with: Substack MCP Server v1.2*
 
 ### Changelog
+- **1.3.0**: Deep Research Enablement. Two-tier content architecture: feed tools return summaries with `hint` field, `ss_get_post_content` returns full untruncated markdown. New `ss_search_posts` tool for article search with time/scope filters (HAR-verified `/api/v1/post/search`). Removed 2000-char content truncation. Summarizer key allowlisting to prevent field clobbering. 13 tools total, 171 tests.
 - **1.2.0**: Added OAuth 2.1 + PKCE authentication via FastMCP's built-in OAuthAuthorizationServerProvider. Single-user password-based flow with dynamic client registration, PKCE S256, token rotation. SQLite-backed (migration v2). Enabled when OAUTH_PASSWORD env var is set. Allows Perplexity and other MCP clients to authenticate via standard OAuth flow.
 - **1.1.0**: Added `ss_get_activity_feed` (engagement notifications, 3 filters, enriched senders). Added `ss_like` (first write operation). 12 tools total, 145 tests. HAR-verified all endpoints.
 - **1.0.0**: Initial release. 10 read tools, server-side dedup + summarization, Fly.io deployment. 121 tests.

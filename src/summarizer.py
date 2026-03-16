@@ -62,4 +62,6 @@ async def summarize(content: str | None) -> dict:
         if field not in result or not isinstance(result[field], str):
             result[field] = ""
 
-    return result
+    # Allowlist keys to prevent clobbering caller fields via article.update()
+    ALLOWED_KEYS = {"summary", "tags", "relevance", "key_quote", "angle"}
+    return {k: v for k, v in result.items() if k in ALLOWED_KEYS}

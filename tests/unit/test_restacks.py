@@ -134,3 +134,29 @@ class TestRestacksFeed:
 
         assert result["error"] is True
         assert result["code"] == "AUTH_EXPIRED"
+
+    @pytest.mark.asyncio
+    async def test_hint_field_present(self):
+        from src.tools.restacks import get_restacks
+        from src.dedup import DedupCache
+
+        cache = DedupCache(":memory:")
+        mock_response = httpx.Response(
+            200,
+            json=MOCK_RESTACKS_RESPONSE,
+            request=httpx.Request("GET", "https://substack.com/api/v1/reader/feed/profile/12345"),
+        )
+
+        with patch("src.tools.restacks.get_client") as mock_gc, \
+             patch("src.tools.restacks.get_cache", return_value=cache), \
+             patch("src.tools.restacks.get_cached_user_id", return_value="12345"), \
+             patch("src.tools.restacks.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+            mock_client = AsyncMock()
+            mock_client.get.return_value = mock_response
+            mock_gc.return_value = mock_client
+
+            result = await get_restacks()
+
+        for article in result:
+            assert "hint" in article
+            assert "ss_get_post_content" in article["hint"]

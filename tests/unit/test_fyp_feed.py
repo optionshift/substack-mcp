@@ -255,7 +255,7 @@ class TestFYPFeedSummarize:
         assert "angle" in article
 
     @pytest.mark.asyncio
-    async def test_summarize_false_returns_raw_content(self):
+    async def test_summarize_false_returns_full_content(self):
         from src.tools.fyp_feed import get_fyp_feed
         from src.dedup import DedupCache
 
@@ -275,8 +275,79 @@ class TestFYPFeedSummarize:
             result = await get_fyp_feed(summarize=False)
 
         article = result[0]
-        assert "raw_content" in article
+        assert "content" in article
         assert "summary" not in article
+
+
+class TestFYPFeedHintAndContent:
+    """Test hint field and full content (no truncation)."""
+
+    @pytest.mark.asyncio
+    async def test_hint_field_present(self):
+        from src.tools.fyp_feed import get_fyp_feed
+        from src.dedup import DedupCache
+
+        cache = DedupCache(":memory:")
+        mock_response = httpx.Response(
+            200,
+            json=MOCK_FYP_RESPONSE,
+            request=httpx.Request("GET", "https://substack.com/api/v1/reader/feed"),
+        )
+
+        with patch("src.tools.fyp_feed.get_client") as mock_get_client, \
+             patch("src.tools.fyp_feed.get_cache", return_value=cache), \
+             patch("src.tools.fyp_feed.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+            mock_client = AsyncMock()
+            mock_client.get.return_value = mock_response
+            mock_get_client.return_value = mock_client
+
+            result = await get_fyp_feed()
+
+        for article in result:
+            assert "hint" in article
+            assert "ss_get_post_content" in article["hint"]
+
+    @pytest.mark.asyncio
+    async def test_content_not_truncated_when_summarize_false(self):
+        from src.tools.fyp_feed import get_fyp_feed
+        from src.dedup import DedupCache
+
+        long_html = "<p>" + "x" * 5000 + "</p>"
+        long_response = {
+            "items": [{
+                "entity_key": "p-9001",
+                "type": "post",
+                "post": {
+                    "id": 9001,
+                    "title": "Long Article",
+                    "slug": "long-article",
+                    "post_date": "2026-03-06T10:00:00Z",
+                    "publishedBylines": [{"name": "Author"}],
+                    "publication": {"name": "Pub", "subdomain": "pub"},
+                    "canonical_url": "https://pub.substack.com/p/long-article",
+                    "body_html": long_html,
+                },
+                "comment": None,
+                "context": {"type": "post"},
+            }],
+        }
+
+        cache = DedupCache(":memory:")
+        mock_response = httpx.Response(
+            200,
+            json=long_response,
+            request=httpx.Request("GET", "https://substack.com/api/v1/reader/feed"),
+        )
+
+        with patch("src.tools.fyp_feed.get_client") as mock_get_client, \
+             patch("src.tools.fyp_feed.get_cache", return_value=cache):
+            mock_client = AsyncMock()
+            mock_client.get.return_value = mock_response
+            mock_get_client.return_value = mock_client
+
+            result = await get_fyp_feed(summarize=False)
+
+        assert len(result[0]["content"]) > 2000
 
 
 class TestFYPFeedEmpty:

@@ -85,9 +85,9 @@ class TestPostContentHTML:
 
             result = await get_post_content(url="https://aiweekly.substack.com/p/deep-dive-ai", summarize=False)
 
-        assert "raw_content" in result
+        assert "content" in result
         # Should be markdown, not HTML
-        assert "<p>" not in result["raw_content"]
+        assert "<p>" not in result["content"]
 
 
 class TestPostContentDedup:
@@ -161,6 +161,95 @@ class TestPostContentSummarize:
             result = await get_post_content(url="https://aiweekly.substack.com/p/deep-dive-ai", summarize=True)
 
         assert "summary" in result
+
+
+class TestPostContentFullContent:
+    """Test full content is always returned (no truncation)."""
+
+    @pytest.mark.asyncio
+    async def test_content_field_present_when_summarize_false(self):
+        from src.tools.post_content import get_post_content
+        from src.dedup import DedupCache
+
+        cache = DedupCache(":memory:")
+        mock_response = httpx.Response(
+            200,
+            json=MOCK_POST_RESPONSE,
+            request=httpx.Request("GET", "https://aiweekly.substack.com/api/v1/posts/deep-dive-ai"),
+        )
+
+        with patch("src.tools.post_content.get_cache", return_value=cache), \
+             patch("src.tools.post_content.fetch_post", new_callable=AsyncMock, return_value=mock_response):
+
+            result = await get_post_content(url="https://aiweekly.substack.com/p/deep-dive-ai", summarize=False)
+
+        assert "content" in result
+        assert len(result["content"]) > 0
+
+    @pytest.mark.asyncio
+    async def test_content_field_present_when_summarize_true(self):
+        from src.tools.post_content import get_post_content
+        from src.dedup import DedupCache
+
+        cache = DedupCache(":memory:")
+        mock_response = httpx.Response(
+            200,
+            json=MOCK_POST_RESPONSE,
+            request=httpx.Request("GET", "https://aiweekly.substack.com/api/v1/posts/deep-dive-ai"),
+        )
+
+        with patch("src.tools.post_content.get_cache", return_value=cache), \
+             patch("src.tools.post_content.fetch_post", new_callable=AsyncMock, return_value=mock_response), \
+             patch("src.tools.post_content.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+
+            result = await get_post_content(url="https://aiweekly.substack.com/p/deep-dive-ai", summarize=True)
+
+        # Both summary AND full content should be present
+        assert "content" in result
+        assert "summary" in result
+
+    @pytest.mark.asyncio
+    async def test_content_not_truncated(self):
+        from src.tools.post_content import get_post_content
+        from src.dedup import DedupCache
+
+        long_html = "<p>" + "x" * 5000 + "</p>"
+        long_post = {**MOCK_POST_RESPONSE, "body_html": long_html}
+        cache = DedupCache(":memory:")
+        mock_response = httpx.Response(
+            200,
+            json=long_post,
+            request=httpx.Request("GET", "https://aiweekly.substack.com/api/v1/posts/deep-dive-ai"),
+        )
+
+        with patch("src.tools.post_content.get_cache", return_value=cache), \
+             patch("src.tools.post_content.fetch_post", new_callable=AsyncMock, return_value=mock_response):
+
+            result = await get_post_content(url="https://aiweekly.substack.com/p/deep-dive-ai", summarize=False)
+
+        # Content should be > 2000 chars (not truncated to old RAW_CONTENT_CHARS)
+        assert len(result["content"]) > 2000
+
+    @pytest.mark.asyncio
+    async def test_default_summarize_is_false(self):
+        from src.tools.post_content import get_post_content
+        from src.dedup import DedupCache
+
+        cache = DedupCache(":memory:")
+        mock_response = httpx.Response(
+            200,
+            json=MOCK_POST_RESPONSE,
+            request=httpx.Request("GET", "https://aiweekly.substack.com/api/v1/posts/deep-dive-ai"),
+        )
+
+        with patch("src.tools.post_content.get_cache", return_value=cache), \
+             patch("src.tools.post_content.fetch_post", new_callable=AsyncMock, return_value=mock_response):
+
+            result = await get_post_content(url="https://aiweekly.substack.com/p/deep-dive-ai")
+
+        # Default should return content without summary
+        assert "content" in result
+        assert "summary" not in result
 
 
 class TestPostContentErrors:

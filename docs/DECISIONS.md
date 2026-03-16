@@ -211,3 +211,55 @@ Each decision includes: Context → Decision → Rationale → Alternatives Cons
 - Cookie expiry confirmed: ~90 days (set March 7, expires June 5)
 - User ID: `383926424`, handle: `mileslozano`
 **Rationale:** HAR captures are ground truth — they show exactly what the real Substack frontend sends. These corrections prevent guaranteed 404s and empty-response bugs in production.
+
+---
+
+## D015: Two-Tier Content Architecture
+**Date:** 2026-03-15
+**Context:** Feed tools returned either Gemini summaries (no full text) or 2000-char truncated raw content. LLMs doing deep research had no way to get complete article text.
+**Decision:** Two-tier discovery pattern — Tier 1: feed/search tools return summaries with `hint` field pointing to `ss_get_post_content`. Tier 2: `ss_get_post_content` returns complete untruncated markdown.
+**Rationale:**
+- Saves tokens on discovery (summaries are small)
+- Full content available on demand for deep research
+- `hint` field tells LLMs exactly which tool to call and how
+- `ss_get_post_content` default changed to `summarize=False` (it's the "read full article" tool)
+- `content` field always present (summary augments, never replaces)
+**Alternatives:** Always return full content (wastes tokens), only return summaries (blocks deep research)
+
+---
+
+## D016: Article Search via /api/v1/post/search
+**Date:** 2026-03-15
+**Context:** HAR capture from search page with Posts tab revealed `GET /api/v1/post/search` endpoint with filter and pagination support. Previous search tool only found publications.
+**Decision:** New `ss_search_posts` tool using `/api/v1/post/search` with `filter` (all/subscribed), `dateRange` (day/week/month), and `page` (0-indexed pagination).
+**Rationale:**
+- HAR-verified with full response schema (results[] with id, title, truncated_body_text, wordcount, reactions, canonical_url)
+- Filters enable scoped search (subscriptions only vs all Substack)
+- Time filters enable recency-based discovery
+- Pagination for browsing deep result sets
+- Returns article previews — LLMs use `ss_get_post_content` for full text (D015 pattern)
+**Alternatives:** Platform/search endpoint (only returns publications/users), top/search (mixed results, less structured)
+
+---
+
+## D017: Authenticated Search Only
+**Date:** 2026-03-15
+**Context:** `/api/v1/post/search` requires `substack.sid` cookie. The older `/api/v1/publication/search` works without auth.
+**Decision:** Use authenticated client for article search. No public fallback.
+**Rationale:**
+- Article search requires auth by design (subscription-scoped results need user context)
+- All other feed tools already require auth — consistent pattern
+- Public publication search still available via `ss_search_publications`
+**Alternatives:** Auth with public fallback (more code, publication search ≠ article search)
+
+---
+
+## D018: Summarizer Key Allowlisting
+**Date:** 2026-03-15
+**Context:** Code review found `article.update(summary_result)` could clobber article fields if Gemini returned unexpected JSON keys. The summarizer returned the raw parsed dict without filtering.
+**Decision:** Allowlist summary keys in `summarizer.py` — only return `{summary, tags, relevance, key_quote, angle}`.
+**Rationale:**
+- Prevents Gemini hallucinated keys from overwriting `content`, `hint`, `id`, `url`, etc.
+- Single fix point protects all callers (5 feed tools + post_content)
+- Follows principle of least surprise — callers expect only the documented schema
+**Alternatives:** Per-caller key filtering (duplicated logic across 6 files)
