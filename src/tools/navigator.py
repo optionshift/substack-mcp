@@ -40,8 +40,20 @@ TOOLS = [
         "description": "Search for articles by keyword. Supports time filters (day/week/month) and scope (all/subscribed). Returns previews — use ss_get_post_content for full text. Params: query, page, filter, date_range, limit.",
     },
     {
+        "name": "ss_search_trending",
+        "description": "Search for trending/recent articles by keyword. Ranked by recency + engagement scores. Params: query, limit.",
+    },
+    {
         "name": "ss_search_publications",
         "description": "Search for publications/newsletters by keyword. Params: query, limit.",
+    },
+    {
+        "name": "ss_get_my_posts",
+        "description": "List your own published posts. Supports pagination and sort order. Params: limit, offset, order_direction.",
+    },
+    {
+        "name": "ss_mark_seen",
+        "description": "Mark a post or note as seen/read in your feed. Params: id, type ('post' or 'note').",
     },
     {
         "name": "ss_get_activity_feed",

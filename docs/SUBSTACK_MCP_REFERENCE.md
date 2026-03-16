@@ -1,4 +1,4 @@
-# Substack MCP Server v1.3 - Complete Reference
+# Substack MCP Server v1.4 - Complete Reference
 
 > **Purpose:** Complete reference documentation for the Substack MCP Server. Designed for LLM consumption to understand all capabilities, tools, and patterns for interacting with Substack's undocumented API.
 
@@ -46,13 +46,13 @@ Optimized for **Option Shift's content engine** — daily ingestion of Substack 
 | Property | Value |
 |----------|-------|
 | Name | ss-navigator |
-| Version | 1.3.0 |
+| Version | 1.4.0 |
 | Protocol | MCP 2025-03-26 |
 | Transport | StreamableHTTP (production) or stdio (local) |
 | Language | Python 3.12+ |
 | Framework | FastMCP (`mcp[server]`) |
-| Tools | 13 (11 read + 1 write + 1 navigator) |
-| Tests | 171 (pytest + pytest-asyncio) |
+| Tools | 16 (13 read + 2 write + 1 navigator) |
+| Tests | 200 (pytest + pytest-asyncio) |
 | Deployment | Fly.io (LAX region) |
 
 ---
@@ -394,7 +394,25 @@ Search for Substack articles by keyword with time and scope filters. Returns art
 
 ---
 
-#### 3.11 ss_search_publications — Publication Search
+#### 3.11 ss_search_trending — Trending Article Search
+
+Search for trending/recent Substack articles ranked by recency and engagement scores. Complements `ss_search_posts` (keyword relevance) with what's hot right now.
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| query | str | Yes | - | Search keyword |
+| limit | int | No | 20 | Max results |
+
+**Endpoint:** `GET /api/v1/recent/search?query={q}&fromSuggestedSearch=false`
+
+**Returns:** Array of article objects with `search_score` and `recency_score` for LLM prioritization. Each result includes `hint` field pointing to `ss_get_post_content`.
+
+**Auth:** Required. **Dedup:** Insert but don't skip.
+
+---
+
+#### 3.12 ss_search_publications — Publication Search
 
 Search for Substack publications/newsletters by keyword.
 
@@ -750,6 +768,9 @@ ss_search_posts         — Search articles by keyword (time/scope filters)
 ss_search_publications  — Search publications/newsletters
 ss_get_activity_feed    — Who engaged with your content
 ss_like                 — Like/heart a post or note
+ss_mark_seen            — Mark post/note as seen/read in feed
+ss_get_my_posts         — List your own published posts
+ss_search_trending      — Trending articles by recency + engagement
 ```
 
 ### API Endpoints (All HAR-Verified)
@@ -761,7 +782,10 @@ GET  /api/v1/subscriptions/page                             Publication list
 GET  /api/v1/reader/feed/profile/{user_id}?types[]=like     Likes
 GET  /api/v1/reader/feed/profile/{user_id}?types[]=restack  Restacks
 GET  /api/v1/post/search?query={q}&page={n}&filter={scope}   Article search
+GET  /api/v1/recent/search?query={q}                        Trending search
 GET  /api/v1/publication/search?query={q}                   Publication search
+GET  {sub}.substack.com/api/v1/post_management/published    My published posts
+POST /api/v1/reader/feed/{p|c}-{id}/seen                    Mark as seen
 GET  /api/v1/activity-feed-web?filter={filter}              Activity feed
 POST /api/v1/post/{id}/reaction                             Like article
 POST /api/v1/comment/{id}/reaction                          Like note
@@ -790,6 +814,7 @@ Validate:   ss_auth_check (caches user_id)
 *Compatible with: Substack MCP Server v1.2*
 
 ### Changelog
+- **1.4.0**: Added `ss_search_trending` (trending articles with recency/engagement scores), `ss_get_my_posts` (creator's published posts, subdomain-scoped), `ss_mark_seen` (mark feed items as read). 16 tools total, 200 tests.
 - **1.3.0**: Deep Research Enablement. Two-tier content architecture: feed tools return summaries with `hint` field, `ss_get_post_content` returns full untruncated markdown. New `ss_search_posts` tool for article search with time/scope filters (HAR-verified `/api/v1/post/search`). Removed 2000-char content truncation. Summarizer key allowlisting to prevent field clobbering. 13 tools total, 171 tests.
 - **1.2.0**: Added OAuth 2.1 + PKCE authentication via FastMCP's built-in OAuthAuthorizationServerProvider. Single-user password-based flow with dynamic client registration, PKCE S256, token rotation. SQLite-backed (migration v2). Enabled when OAUTH_PASSWORD env var is set. Allows Perplexity and other MCP clients to authenticate via standard OAuth flow.
 - **1.1.0**: Added `ss_get_activity_feed` (engagement notifications, 3 filters, enriched senders). Added `ss_like` (first write operation). 12 tools total, 145 tests. HAR-verified all endpoints.

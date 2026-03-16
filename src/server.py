@@ -14,8 +14,11 @@ from src.tools.likes import get_likes
 from src.tools.notes_feed import get_notes_feed
 from src.tools.post_content import get_post_content
 from src.tools.restacks import get_restacks
+from src.tools.mark_seen import mark_seen
+from src.tools.my_posts import get_my_posts
 from src.tools.search import search_publications
 from src.tools.search_posts import search_posts
+from src.tools.search_trending import search_trending
 from src.tools.subscription_feed import get_subscription_feed
 from src.tools.subscriptions import get_subscriptions
 
@@ -150,6 +153,24 @@ async def ss_get_post_content(url: str | None = None, summarize: bool = False) -
 async def ss_get_subscription_feed(limit: int = 30, since: str | None = None, summarize: bool = True) -> list | dict:
     """Get subscription feed with dedup, summarization, and RSS fallback."""
     return await get_subscription_feed(limit=limit, since=since, summarize=summarize)
+
+
+@mcp.tool()
+async def ss_search_trending(query: str, limit: int = 20) -> list | dict:
+    """Search for trending/recent Substack articles by keyword. Results ranked by recency and engagement scores. Use ss_get_post_content with a result URL to read the full article."""
+    return await search_trending(query=query, limit=limit)
+
+
+@mcp.tool()
+async def ss_get_my_posts(limit: int = 10, offset: int = 0, order_direction: str = "desc") -> list | dict:
+    """List your own published Substack posts. Useful for content tracking and cross-referencing with engagement data from ss_get_activity_feed."""
+    return await get_my_posts(limit=limit, offset=offset, order_direction=order_direction)
+
+
+@mcp.tool()
+async def ss_mark_seen(id: str, type: str = "post") -> dict:
+    """Mark a post or note as seen/read in your Substack feed. type: 'post' or 'note'. Helps keep feeds clean for future ingestion passes."""
+    return await mark_seen(id=id, type=type)
 
 
 @mcp.tool()

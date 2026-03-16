@@ -130,6 +130,9 @@ Each batch follows this exact sequence. No shortcuts.
 - `POST /api/v1/comment/{id}/reaction` — Like note (HAR-CONFIRMED, body: `{publication_id: null, reaction: ❤, tabId: for-you}`)
 - `POST /api/v1/activity/unread` — Mark notifications as read (HAR-CONFIRMED)
 - `GET /api/v1/post/search?query={q}&page={n}&includePlatformResults={bool}&filter={scope}&dateRange={range}` — Article search (HAR-CONFIRMED, returns results[] with post data)
+- `GET /api/v1/recent/search?query={q}&fromSuggestedSearch=false` — Trending/recent search (HAR-CONFIRMED, returns items[] with search_score, recency_score)
+- `GET https://{subdomain}.substack.com/api/v1/post_management/published?offset={n}&limit={n}&order_by=post_date&order_direction={asc|desc}` — Creator's published posts (HAR-CONFIRMED, subdomain-scoped)
+- `POST /api/v1/reader/feed/{p|c}-{id}/seen` — Mark post/note as seen (HAR-CONFIRMED, returns {})
 - `GET /api/v1/activity/unread` — Lightweight auth validation (LIVE-CONFIRMED)
 
 ### Endpoint Verification Status

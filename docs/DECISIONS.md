@@ -263,3 +263,41 @@ Each decision includes: Context → Decision → Rationale → Alternatives Cons
 - Single fix point protects all callers (5 feed tools + post_content)
 - Follows principle of least surprise — callers expect only the documented schema
 **Alternatives:** Per-caller key filtering (duplicated logic across 6 files)
+
+---
+
+## D019: Trending Search via /api/v1/recent/search
+**Date:** 2026-03-15
+**Context:** `ss_search_posts` uses keyword-match search. HAR revealed `/api/v1/recent/search` which returns results ranked by recency + engagement scores (search_score, recency_score, semantic_score, etc.).
+**Decision:** New `ss_search_trending` tool complementing `ss_search_posts`. Returns scores alongside article metadata for LLM prioritization.
+**Rationale:**
+- Different ranking signal than keyword search — surfaces what's trending now
+- Scores enable LLM to prioritize (high recency_score = fresh, high search_score = relevant)
+- Same two-tier pattern: preview + hint → `ss_get_post_content` for full text
+**Alternatives:** Merge into ss_search_posts with a mode param (muddies the interface)
+
+---
+
+## D020: Subdomain-Scoped Endpoint Pattern (post_management)
+**Date:** 2026-03-15
+**Context:** `/api/v1/post_management/published` is scoped to a publication subdomain (e.g., `joinveri.substack.com`), unlike all other endpoints which use `substack.com`.
+**Decision:** Use raw `httpx.AsyncClient()` with explicit cookie injection and `SUBSTACK_PUBLICATION_SUBDOMAIN` env var (default: `joinveri`). Follows the `post_content.py` `fetch_post()` pattern.
+**Rationale:**
+- SubstackClient hardcodes `base_url = "https://substack.com"` — can't change per-request
+- Adding subdomain support to SubstackClient would affect all 13 existing tools
+- Raw httpx with cookie injection is the established pattern for subdomain-scoped calls
+- Env var allows changing publication without code changes
+**Alternatives:** Modify SubstackClient to accept base_url override (invasive change)
+
+---
+
+## D021: Mark Seen as Write Operation
+**Date:** 2026-03-15
+**Context:** `POST /api/v1/reader/feed/{id}/seen` marks feed items as read. Mirrors the `ss_like` POST pattern.
+**Decision:** New `ss_mark_seen` tool. Supports both `p-{postId}` and `c-{commentId}` prefixes. No request body, returns `{}`.
+**Rationale:**
+- Pairs with dedup cache to create a complete "processed" signal
+- Dedup prevents re-showing in MCP feeds, mark_seen prevents re-showing in Substack UI
+- Clean ingestion pipeline: ingest → process → mark seen
+- Same validation/error pattern as ss_like for consistency
+**Alternatives:** Auto-mark-seen in feed tools (too aggressive, user should control)

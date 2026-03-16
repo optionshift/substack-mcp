@@ -92,6 +92,10 @@
 | 16 — Content Architecture | Complete | 9 | Two-tier pattern: feeds return summaries with hint, ss_get_post_content returns full markdown. Removed 2000-char truncation. 154 total tests. |
 | 17 — Article Search | Complete | 17 | New ss_search_posts tool via /api/v1/post/search. Time/scope filters, pagination, dedup, input validation. 171 total tests. |
 | 18 — Sprint Review | Complete | — | Code review (6 findings, 5 fixed). Summarizer key allowlist, notes hint fix, search validation. |
+| 19 — Trending Search | Complete | 11 | ss_search_trending via /api/v1/recent/search. Recency + engagement scoring. 182 total tests. |
+| 20 — My Posts | Complete | 9 | ss_get_my_posts via subdomain-scoped /post_management/published. Pagination. 191 total tests. |
+| 21 — Mark Seen | Complete | 9 | ss_mark_seen via POST /reader/feed/{id}/seen. Posts + notes. 200 total tests. |
+| 22 — Sprint Review | Complete | — | Deploy, docs v1.4, decisions D019-D021. |
 
 ---
 
@@ -339,3 +343,25 @@ MCP server blocked Perplexity/Claude from deep research: full article content ne
 
 ### Test Results
 **171 tests passing, 0 failures** (+26 from baseline of 145)
+
+---
+
+## Sprint 5 — Trending Search, My Posts, Mark Seen (March 15, 2026)
+
+### Batch 19 — Trending Search Tool
+- New `ss_search_trending` using `GET /api/v1/recent/search`
+- Returns articles ranked by recency + engagement scores (`search_score`, `recency_score`)
+- Dedup: insert but don't skip
+
+### Batch 20 — My Published Posts Tool
+- New `ss_get_my_posts` using `GET {subdomain}.substack.com/api/v1/post_management/published`
+- Subdomain-scoped endpoint (uses `SUBSTACK_PUBLICATION_SUBDOMAIN` env var, defaults to `joinveri`)
+- Pagination via offset/limit, sortable by post_date asc/desc
+
+### Batch 21 — Mark Seen Tool
+- New `ss_mark_seen` using `POST /api/v1/reader/feed/{p|c}-{id}/seen`
+- Mirrors `ss_like` pattern exactly
+- Supports both posts (`p-{id}`) and notes (`c-{id}`)
+
+### Test Results
+**200 tests passing, 0 failures** (+29 from Sprint 4)
