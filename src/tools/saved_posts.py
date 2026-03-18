@@ -89,8 +89,11 @@ async def get_saved_posts(
     for item in inbox_items:
         content_key = item.get("content_key", "")
         if content_key.startswith("post:"):
-            post_id = int(content_key.split(":")[1])
-            inbox_map[post_id] = item
+            try:
+                post_id = int(content_key.split(":")[1])
+                inbox_map[post_id] = item
+            except (ValueError, IndexError):
+                pass
 
     since_dt = None
     if since:

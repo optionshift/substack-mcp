@@ -52,7 +52,7 @@ Optimized for **Option Shift's content engine** — daily ingestion of Substack 
 | Language | Python 3.12+ |
 | Framework | FastMCP (`mcp[server]`) |
 | Tools | 19 (14 read + 4 write + 1 navigator) |
-| Tests | 236 (pytest + pytest-asyncio) |
+| Tests | 240 (pytest + pytest-asyncio) |
 | Deployment | Fly.io (LAX region) |
 
 ---

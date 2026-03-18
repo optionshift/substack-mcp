@@ -512,3 +512,69 @@ class TestGetSavedPosts:
 
         assert len(result) == 1
         assert result[0]["publication"] == ""
+
+    @pytest.mark.asyncio
+    async def test_summarize_fallback_returns_raw_content(self):
+        """When summarizer fails, raw_content is returned instead of summary fields."""
+        from src.tools.saved_posts import get_saved_posts
+        from src.dedup import DedupCache
+
+        cache = DedupCache(":memory:")
+        fallback_result = {"raw_content": "Summarization failed, here is the raw text..."}
+
+        with patch("src.tools.saved_posts.get_client") as mock_gc, \
+             patch("src.tools.saved_posts.get_cache", return_value=cache), \
+             patch("src.tools.saved_posts.run_summarize", new_callable=AsyncMock, return_value=fallback_result):
+            mock_client = AsyncMock()
+            mock_client.get.return_value = _make_response()
+            mock_gc.return_value = mock_client
+
+            result = await get_saved_posts()
+
+        assert len(result) == 2
+        for article in result:
+            assert "raw_content" in article
+            assert "summary" not in article
+
+    @pytest.mark.asyncio
+    async def test_malformed_content_key_handled(self):
+        """Malformed content_key in inboxItems should not crash."""
+        from src.tools.saved_posts import get_saved_posts
+        from src.dedup import DedupCache
+
+        cache = DedupCache(":memory:")
+        data = {
+            "posts": [{
+                "id": 11111,
+                "publication_id": 0,
+                "title": "Test Post",
+                "slug": "test",
+                "post_date": "2026-03-01T00:00:00Z",
+                "audience": "everyone",
+                "type": "newsletter",
+                "body_html": "<p>Test</p>",
+                "publishedBylines": [],
+                "canonical_url": "https://test.substack.com/p/test",
+            }],
+            "publications": [],
+            "savedPosts": [{"user_id": 383926424, "post_id": 11111, "created_at": "2026-03-01T00:00:00Z"}],
+            "inboxItems": [
+                {"content_key": "post:", "read_progress": 0.5},
+                {"content_key": "post:abc", "read_progress": 0.3},
+            ],
+            "postViews": [],
+            "postReactions": [],
+            "more": False,
+        }
+
+        with patch("src.tools.saved_posts.get_client") as mock_gc, \
+             patch("src.tools.saved_posts.get_cache", return_value=cache), \
+             patch("src.tools.saved_posts.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+            mock_client = AsyncMock()
+            mock_client.get.return_value = _make_response(data=data)
+            mock_gc.return_value = mock_client
+
+            result = await get_saved_posts()
+
+        assert len(result) == 1
+        assert result[0]["read_progress"] == 0.0

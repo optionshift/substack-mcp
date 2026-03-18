@@ -144,11 +144,11 @@ class TestUnsavePost:
             mock_client.delete.return_value = _make_delete_response()
             mock_gc.return_value = mock_client
 
-            await unsave_post(post_id="184134130")
+            await unsave_post(post_id="191270969")
 
         mock_client.delete.assert_called_once_with(
             "/api/v1/posts/saved",
-            json={"post_id": 184134130},
+            json={"post_id": 191270969},
         )
 
     @pytest.mark.asyncio
@@ -211,5 +211,21 @@ class TestUnsavePost:
             mock_gc.return_value = AsyncMock()
             result = await unsave_post(post_id="abc")
 
+        assert result["error"] is True
+        assert result["code"] == "VALIDATION"
+
+    @pytest.mark.asyncio
+    async def test_save_empty_string_post_id(self):
+        from src.tools.save_post import save_post
+
+        result = await save_post(post_id="")
+        assert result["error"] is True
+        assert result["code"] == "VALIDATION"
+
+    @pytest.mark.asyncio
+    async def test_unsave_empty_string_post_id(self):
+        from src.tools.save_post import unsave_post
+
+        result = await unsave_post(post_id="")
         assert result["error"] is True
         assert result["code"] == "VALIDATION"

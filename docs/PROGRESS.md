@@ -98,7 +98,7 @@
 | 22 — Sprint Review | Complete | — | Deploy, docs v1.4, decisions D019-D021. |
 | 23 — Saved Posts | Complete | 20 | ss_get_saved_posts via /api/v1/reader/posts?inboxType={saved\|seen\|paid}. Server-side joins, read_progress. 221 total tests. |
 | 24 — Save/Unsave | Complete | 14 | ss_save_post + ss_unsave_post. POST + DELETE /api/v1/posts/saved. Added delete() to SubstackClient. 235 total tests. |
-| 25 — Sprint Review | Complete | 1 | Code review (2 findings from agents, 1 test fix). Deploy v1.5. Docs updated. 236 total tests. |
+| 25 — Sprint Review | Complete | 4 | Code review (5 findings fixed). Deploy v1.5. Docs updated. 240 total tests. |
 
 ---
 
@@ -131,9 +131,14 @@ User saves Substack articles but never processes them into playbooks for prompti
 | `/api/v1/posts/saved` | DELETE | `{"post_id": N}` | `{}` |
 
 ### Batch 25 — Sprint Review
-**Code review findings (2 from agents, 1 fixed):**
-1. **SKIP** — `since` param uses client-side filtering instead of API `after=` param. Consistent with ALL existing feed tools (likes, restacks, fyp). Not a regression.
-2. **FIXED** — Added `test_hint_absent_when_no_url` test for missing URL edge case. Strengthened `test_more_flag_in_response`.
+**Code review findings (7 from agents, 5 fixed, 2 skipped):**
+1. **FIXED** — `substack_client.py`: `delete()` used `http.request("DELETE")` instead of `http.delete()`. Inconsistent with get/post pattern.
+2. **FIXED** — `saved_posts.py`: Unguarded `int()` cast on `content_key` suffix could crash on malformed API data. Added try/except.
+3. **FIXED** — Added `test_hint_absent_when_no_url` test for missing URL edge case. Strengthened `test_more_flag_in_response`.
+4. **FIXED** — Added `test_summarize_fallback_returns_raw_content` and `test_malformed_content_key_handled` tests.
+5. **FIXED** — Added `test_save_empty_string_post_id` and `test_unsave_empty_string_post_id` edge case tests. Fixed inconsistent post_id in unsave endpoint test.
+6. **SKIP** — `since` param uses client-side filtering. Consistent with ALL existing feed tools. Not a regression.
+7. **SKIP** — Reviewer claimed `get_cache` not patched in inbox_type tests — verified FALSE (it IS patched).
 
 ### Post-Deploy Verification
 | Check | Result |
@@ -143,7 +148,7 @@ User saves Substack articles but never processes them into playbooks for prompti
 | MCP endpoint | Auth required (OAuth enabled) — correct |
 
 ### Test Results
-**236 tests passing, 0 failures** (+36 from Sprint 5)
+**240 tests passing, 0 failures** (+40 from Sprint 5)
 
 ---
 
