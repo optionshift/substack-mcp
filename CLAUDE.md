@@ -110,7 +110,7 @@ Each batch follows this exact sequence. No shortcuts.
 - `src/substack_client.py` — Substack API client (httpx, cookie auth, rate limiting)
 - `src/dedup.py` — SQLite dedup cache with schema versioning
 - `src/summarizer.py` — Gemini Flash-Lite summarization (async)
-- `src/tools/` — Tool implementations (12 tools)
+- `src/tools/` — Tool implementations (18 tools)
 - `tests/unit/` — Unit tests (pytest + pytest-asyncio)
 - `tests/integration/` — Integration tests
 
@@ -134,6 +134,9 @@ Each batch follows this exact sequence. No shortcuts.
 - `GET https://{subdomain}.substack.com/api/v1/post_management/published?offset={n}&limit={n}&order_by=post_date&order_direction={asc|desc}` — Creator's published posts (HAR-CONFIRMED, subdomain-scoped)
 - `POST /api/v1/reader/feed/{p|c}-{id}/seen` — Mark post/note as seen (HAR-CONFIRMED, returns {})
 - `GET /api/v1/activity/unread` — Lightweight auth validation (LIVE-CONFIRMED)
+- `GET /api/v1/reader/posts?inboxType={saved|seen|paid}&limit={n}` — Saved/reading list (HAR-CONFIRMED, returns posts[]+publications[]+savedPosts[]+inboxItems[])
+- `POST /api/v1/posts/saved` — Save/bookmark article (HAR-CONFIRMED, body: `{post_id: N}`, returns `{}`)
+- `DELETE /api/v1/posts/saved` — Unsave/unbookmark article (HAR-CONFIRMED, body: `{post_id: N}`, returns `{}`)
 
 ### Endpoint Verification Status
 ALL ENDPOINTS LIVE-TESTED. Every tool's API path returns 200 OK with expected data.

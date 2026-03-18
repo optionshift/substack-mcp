@@ -48,6 +48,21 @@ class SubstackClient:
             return response
 
 
+    async def delete(self, path: str, **kwargs) -> httpx.Response:
+        elapsed = time.monotonic() - self._last_request_time
+        if elapsed < 1.0:
+            await asyncio.sleep(1.0 - elapsed)
+        async with httpx.AsyncClient(
+            base_url=BASE_URL,
+            cookies=self.get_cookies(),
+            follow_redirects=True,
+        ) as http:
+            response = await http.request("DELETE", path, **kwargs)
+            await response.aread()
+            self._last_request_time = time.monotonic()
+            return response
+
+
 def create_client() -> SubstackClient | None:
     cookie = os.environ.get("SUBSTACK_SESSION_COOKIE")
     if not cookie:

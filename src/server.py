@@ -20,6 +20,8 @@ from src.tools.search import search_publications
 from src.tools.search_posts import search_posts
 from src.tools.search_trending import search_trending
 from src.tools.subscription_feed import get_subscription_feed
+from src.tools.save_post import save_post, unsave_post
+from src.tools.saved_posts import get_saved_posts
 from src.tools.subscriptions import get_subscriptions
 
 
@@ -201,6 +203,24 @@ async def ss_get_subscriptions() -> list | dict:
 async def ss_get_activity_feed(filter: str = "all", limit: int = 20) -> dict:
     """See who liked, restacked, or replied to your posts/notes. Filters: all, replies-and-mentions, restacks."""
     return await get_activity_feed(filter=filter, limit=limit)
+
+
+@mcp.tool()
+async def ss_get_saved_posts(inbox_type: str = "saved", limit: int = 20, since: str | None = None, summarize: bool = True) -> list | dict:
+    """Get saved/bookmarked articles, recently read posts, or paid-only content. inbox_type: 'saved' (bookmarks), 'seen' (already read), 'paid' (premium). Use ss_get_post_content with a result URL to read the full article."""
+    return await get_saved_posts(inbox_type=inbox_type, limit=limit, since=since, summarize=summarize)
+
+
+@mcp.tool()
+async def ss_save_post(post_id: str) -> dict:
+    """Save/bookmark an article for later. Use ss_get_saved_posts to retrieve your saved queue."""
+    return await save_post(post_id=post_id)
+
+
+@mcp.tool()
+async def ss_unsave_post(post_id: str) -> dict:
+    """Remove an article from your saved/bookmarked queue. Use after extracting playbooks from saved articles."""
+    return await unsave_post(post_id=post_id)
 
 
 @mcp.tool()

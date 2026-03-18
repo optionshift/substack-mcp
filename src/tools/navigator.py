@@ -60,6 +60,18 @@ TOOLS = [
         "description": "See who liked, restacked, or replied to your content. Params: filter ('all', 'replies-and-mentions', 'restacks'), limit.",
     },
     {
+        "name": "ss_get_saved_posts",
+        "description": "Get saved/bookmarked articles, recently read posts, or paid-only content. Params: inbox_type ('saved', 'seen', 'paid'), limit, since, summarize.",
+    },
+    {
+        "name": "ss_save_post",
+        "description": "Save/bookmark an article for later. Params: post_id.",
+    },
+    {
+        "name": "ss_unsave_post",
+        "description": "Remove an article from saved queue (after extracting playbook). Params: post_id.",
+    },
+    {
         "name": "ss_like",
         "description": "Like/heart an article or note. Params: id (post or comment ID), type ('post' or 'note').",
     },
@@ -85,6 +97,28 @@ WORKFLOWS = [
             "1. Read ingested articles from Notion (already stored by 7am task)",
             "2. ss_get_post_content(url=...) — deep-read high-relevance articles",
             "3. Draft content using article summaries, key quotes, and angles",
+        ],
+    },
+    {
+        "name": "Saved Posts → Playbook Pipeline",
+        "description": "Review saved articles and turn them into actionable playbooks for prompting, GTM, VC strategy, etc.",
+        "steps": [
+            "1. ss_auth_check — validate cookie",
+            "2. ss_get_saved_posts(inbox_type='saved') — retrieve bookmarked articles",
+            "3. ss_get_post_content(url=...) — deep-read each saved article",
+            "4. Extract playbook/framework from article content",
+            "5. ss_unsave_post(post_id=...) — remove from saved queue once processed",
+        ],
+    },
+    {
+        "name": "Morning Engagement Check",
+        "description": "Check recently posted paid content and get early on replies.",
+        "steps": [
+            "1. ss_auth_check — validate cookie",
+            "2. ss_get_saved_posts(inbox_type='paid') — see new premium content",
+            "3. ss_get_saved_posts(inbox_type='seen') — review recently read articles",
+            "4. ss_get_post_content(url=...) — re-read articles worth engaging with",
+            "5. Use insights to craft early, thoughtful replies",
         ],
     },
     {
@@ -139,5 +173,10 @@ def get_navigator() -> dict:
             "Article search: GET /api/v1/post/search?query={q}&page={n}&includePlatformResults={bool}&filter={all|subscribed}&dateRange={day|week|month}.",
             "Article search returns: title, subtitle, truncated_body_text, wordcount, reactions, canonical_url — use ss_get_post_content for full text.",
             "Rate limit: 1 request/second enforced server-side.",
+            "Saved posts: GET /api/v1/reader/posts?inboxType=saved&limit=20 — returns posts[] + publications[] + savedPosts[] (denormalized, server joins them).",
+            "Reading list filters: inboxType=saved (bookmarks), seen (already read), paid (premium content).",
+            "Save article: POST /api/v1/posts/saved with {post_id: N} — returns {}.",
+            "Unsave article: DELETE /api/v1/posts/saved with {post_id: N} — returns {}.",
+            "Saved posts pagination: use &after=ISO_TIMESTAMP for cursor-based paging.",
         ],
     }

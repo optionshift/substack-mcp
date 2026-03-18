@@ -1,7 +1,7 @@
 # Progress Log: substack-mcp
 
-## Status: Sprint 2-3 APPROVED
-**Last Updated:** 2026-03-08
+## Status: Sprint 6 IN PROGRESS
+**Last Updated:** 2026-03-17
 
 ---
 
@@ -96,6 +96,54 @@
 | 20 — My Posts | Complete | 9 | ss_get_my_posts via subdomain-scoped /post_management/published. Pagination. 191 total tests. |
 | 21 — Mark Seen | Complete | 9 | ss_mark_seen via POST /reader/feed/{id}/seen. Posts + notes. 200 total tests. |
 | 22 — Sprint Review | Complete | — | Deploy, docs v1.4, decisions D019-D021. |
+| 23 — Saved Posts | Complete | 20 | ss_get_saved_posts via /api/v1/reader/posts?inboxType={saved\|seen\|paid}. Server-side joins, read_progress. 221 total tests. |
+| 24 — Save/Unsave | Complete | 14 | ss_save_post + ss_unsave_post. POST + DELETE /api/v1/posts/saved. Added delete() to SubstackClient. 235 total tests. |
+| 25 — Sprint Review | Complete | 1 | Code review (2 findings from agents, 1 test fix). Deploy v1.5. Docs updated. 236 total tests. |
+
+---
+
+## Sprint 6 — Saved Posts & Playbook Pipeline (March 17, 2026)
+
+### Problem
+User saves Substack articles but never processes them into playbooks for prompting, GTM, VC strategy, etc. Need tools to retrieve saved articles and manage the saved queue.
+
+### Batch 23 — Saved Posts Tool
+- New `ss_get_saved_posts` using `GET /api/v1/reader/posts?inboxType={saved|seen|paid}`
+- Server-side joins: posts[] + publications[] + savedPosts[] + inboxItems[]
+- Includes `saved_at` timestamp and `read_progress` from inbox metadata
+- `inbox_type` filter: saved (bookmarks), seen (already read), paid (premium)
+- Dedup: insert but don't skip (saved posts always returned)
+- `since` filter uses `saved_at` for saved type, `post_date` for seen/paid
+
+### Batch 24 — Save/Unsave Tools
+- New `ss_save_post`: `POST /api/v1/posts/saved` with `{"post_id": N}`
+- New `ss_unsave_post`: `DELETE /api/v1/posts/saved` with `{"post_id": N}`
+- Added `delete()` method to `SubstackClient` (mirrors post() with rate limiting)
+- Input validation: post_id must be numeric
+
+### HAR-Verified Endpoints
+| Endpoint | Method | Body | Response |
+|---|---|---|---|
+| `/api/v1/reader/posts?inboxType=saved&limit=20` | GET | — | `{posts[], publications[], savedPosts[], inboxItems[], more}` |
+| `/api/v1/reader/posts?inboxType=seen&limit=20` | GET | — | Same shape |
+| `/api/v1/reader/posts?inboxType=paid&limit=20` | GET | — | Same shape |
+| `/api/v1/posts/saved` | POST | `{"post_id": N}` | `{}` |
+| `/api/v1/posts/saved` | DELETE | `{"post_id": N}` | `{}` |
+
+### Batch 25 — Sprint Review
+**Code review findings (2 from agents, 1 fixed):**
+1. **SKIP** — `since` param uses client-side filtering instead of API `after=` param. Consistent with ALL existing feed tools (likes, restacks, fyp). Not a regression.
+2. **FIXED** — Added `test_hint_absent_when_no_url` test for missing URL edge case. Strengthened `test_more_flag_in_response`.
+
+### Post-Deploy Verification
+| Check | Result |
+|---|---|
+| `fly status` | started, 1 passing health check |
+| `GET /health` | `{"status":"ok","version":"1.0.0"}` |
+| MCP endpoint | Auth required (OAuth enabled) — correct |
+
+### Test Results
+**236 tests passing, 0 failures** (+36 from Sprint 5)
 
 ---
 

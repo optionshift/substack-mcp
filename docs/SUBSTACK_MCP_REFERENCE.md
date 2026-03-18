@@ -51,8 +51,8 @@ Optimized for **Option Shift's content engine** — daily ingestion of Substack 
 | Transport | StreamableHTTP (production) or stdio (local) |
 | Language | Python 3.12+ |
 | Framework | FastMCP (`mcp[server]`) |
-| Tools | 16 (13 read + 2 write + 1 navigator) |
-| Tests | 200 (pytest + pytest-asyncio) |
+| Tools | 19 (14 read + 4 write + 1 navigator) |
+| Tests | 236 (pytest + pytest-asyncio) |
 | Deployment | Fly.io (LAX region) |
 
 ---
@@ -505,6 +505,80 @@ Like/heart an article or note. First write operation.
 {"success": true, "id": "190215624", "type": "post"}
 ```
 
+#### 3.13 ss_get_saved_posts — Saved/Bookmarked Articles
+
+Get saved articles, recently read posts, or paid-only content. Uses denormalized response with server-side joins.
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| inbox_type | str | No | `saved` | `saved` (bookmarks), `seen` (already read), `paid` (premium) |
+| limit | int | No | 20 | Max articles to return |
+| since | str | No | None | ISO timestamp filter (filters by `saved_at` for saved, `post_date` otherwise) |
+| summarize | bool | No | True | Return Gemini summaries or raw markdown |
+
+**Endpoint:** `GET /api/v1/reader/posts?inboxType={saved|seen|paid}&limit={n}`
+
+**Response shape (API):**
+```json
+{"posts": [], "publications": [], "savedPosts": [], "inboxItems": [], "more": true}
+```
+
+**Returns (per article):**
+```json
+{
+  "id": "substack_post_162633402",
+  "title": "89 Best Startup Essays...",
+  "author": "VC Corner Author",
+  "publication": "The VC Corner",
+  "url": "https://thevccorner.substack.com/p/best-startup-essays",
+  "published_at": "2025-05-01T18:22:26.577Z",
+  "saved_at": "2026-03-17T00:19:52.420Z",
+  "read_progress": 0.0,
+  "is_new": true,
+  "source_feed": "saved",
+  "hint": "Use ss_get_post_content with this URL to read the full article"
+}
+```
+
+**Dedup:** Insert but don't skip (saved posts always returned, like search_posts).
+
+---
+
+#### 3.14 ss_save_post — Save/Bookmark Article
+
+Save an article to your reading list for later processing.
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| post_id | str | Yes | - | Numeric post ID |
+
+**Endpoint:** `POST /api/v1/posts/saved` with body `{"post_id": N}`
+
+**Returns (success):**
+```json
+{"success": true, "post_id": "191270969", "action": "saved"}
+```
+
+---
+
+#### 3.15 ss_unsave_post — Remove from Saved Queue
+
+Remove an article from saved/bookmarked queue after extracting playbooks.
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| post_id | str | Yes | - | Numeric post ID |
+
+**Endpoint:** `DELETE /api/v1/posts/saved` with body `{"post_id": N}`
+
+**Returns (success):**
+```json
+{"success": true, "post_id": "184134130", "action": "unsaved"}
+```
+
 ---
 
 ## 4. Business Logic & Constants
@@ -517,7 +591,7 @@ All feed tools follow the same pattern:
 3. If exists → **skip** (don't return to client)
 4. If new → **insert** into `seen_articles` and return to client
 
-**Exception:** `ss_get_post_content` inserts but does NOT skip — explicit lookups always return content.
+**Exception:** `ss_get_post_content`, `ss_search_posts`, `ss_search_trending`, and `ss_get_saved_posts` insert but do NOT skip — explicit lookups/saved posts always return content.
 
 ### 4.2 Article Schema
 
@@ -562,6 +636,9 @@ Tags from summarization are constrained to:
 | `likes` | ss_get_likes |
 | `restacks` | ss_get_restacks |
 | `notes` | ss_get_notes_feed |
+| `saved` | ss_get_saved_posts (inbox_type=saved) |
+| `seen` | ss_get_saved_posts (inbox_type=seen) |
+| `paid` | ss_get_saved_posts (inbox_type=paid) |
 
 ### 4.5 Cookie Auth
 
@@ -771,6 +848,9 @@ ss_like                 — Like/heart a post or note
 ss_mark_seen            — Mark post/note as seen/read in feed
 ss_get_my_posts         — List your own published posts
 ss_search_trending      — Trending articles by recency + engagement
+ss_get_saved_posts      — Saved/bookmarked articles (saved/seen/paid filters)
+ss_save_post            — Bookmark an article for later
+ss_unsave_post          — Remove from saved queue after processing
 ```
 
 ### API Endpoints (All HAR-Verified)
@@ -790,6 +870,9 @@ GET  /api/v1/activity-feed-web?filter={filter}              Activity feed
 POST /api/v1/post/{id}/reaction                             Like article
 POST /api/v1/comment/{id}/reaction                          Like note
 POST /api/v1/activity/unread                                Mark as read
+GET  /api/v1/reader/posts?inboxType={saved|seen|paid}       Saved/reading list
+POST /api/v1/posts/saved                                    Save/bookmark article
+DEL  /api/v1/posts/saved                                    Unsave/unbookmark
 ```
 
 ### Feed Response Format
@@ -809,11 +892,12 @@ Validate:   ss_auth_check (caches user_id)
 
 ---
 
-*Document Version: 1.2.0*
-*Last Updated: March 15, 2026*
-*Compatible with: Substack MCP Server v1.2*
+*Document Version: 1.5.0*
+*Last Updated: March 17, 2026*
+*Compatible with: Substack MCP Server v1.5*
 
 ### Changelog
+- **1.5.0**: Saved Posts & Playbook Pipeline. Added `ss_get_saved_posts` (reading list with inbox_type filters: saved/seen/paid, server-side joins of posts+publications+savedPosts+inboxItems, read_progress tracking), `ss_save_post` (bookmark articles), `ss_unsave_post` (remove from queue after processing). Added `delete()` to SubstackClient. 2 new workflows (Saved Posts → Playbook, Morning Engagement Check). 19 tools total, 235 tests.
 - **1.4.0**: Added `ss_search_trending` (trending articles with recency/engagement scores), `ss_get_my_posts` (creator's published posts, subdomain-scoped), `ss_mark_seen` (mark feed items as read). 16 tools total, 200 tests.
 - **1.3.0**: Deep Research Enablement. Two-tier content architecture: feed tools return summaries with `hint` field, `ss_get_post_content` returns full untruncated markdown. New `ss_search_posts` tool for article search with time/scope filters (HAR-verified `/api/v1/post/search`). Removed 2000-char content truncation. Summarizer key allowlisting to prevent field clobbering. 13 tools total, 171 tests.
 - **1.2.0**: Added OAuth 2.1 + PKCE authentication via FastMCP's built-in OAuthAuthorizationServerProvider. Single-user password-based flow with dynamic client registration, PKCE S256, token rotation. SQLite-backed (migration v2). Enabled when OAUTH_PASSWORD env var is set. Allows Perplexity and other MCP clients to authenticate via standard OAuth flow.
