@@ -33,9 +33,10 @@ async def search_publications(
         }
 
     data = response.json()
+    pubs = data.get("results", data) if isinstance(data, dict) else data
     results = []
 
-    for pub in data:
+    for pub in pubs:
         if len(results) >= limit:
             break
 

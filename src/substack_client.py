@@ -57,7 +57,7 @@ class SubstackClient:
             cookies=self.get_cookies(),
             follow_redirects=True,
         ) as http:
-            response = await http.delete(path, **kwargs)
+            response = await http.request("DELETE", path, **kwargs)
             await response.aread()
             self._last_request_time = time.monotonic()
             return response

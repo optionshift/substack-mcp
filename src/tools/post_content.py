@@ -34,7 +34,7 @@ def parse_substack_url(url: str) -> tuple[str, str]:
 
 
 async def fetch_post(url: str) -> httpx.Response:
-    async with httpx.AsyncClient() as http:
+    async with httpx.AsyncClient(follow_redirects=True) as http:
         response = await http.get(url)
         await response.aread()
         return response
