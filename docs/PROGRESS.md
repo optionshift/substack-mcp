@@ -1,6 +1,6 @@
 # Progress Log: substack-mcp
 
-## Status: Sprint 6 IN PROGRESS
+## Status: Sprint 6 APPROVED
 **Last Updated:** 2026-03-17
 
 ---
@@ -149,6 +149,20 @@ User saves Substack articles but never processes them into playbooks for prompti
 
 ### Test Results
 **240 tests passing, 0 failures** (+40 from Sprint 5)
+
+---
+
+## Sprint 6 Summary
+
+**APPROVED** — 2026-03-17
+**Total tests:** 240 passing, 0 failing
+**Batches completed:** 23-25 (Saved Posts, Save/Unsave, Sprint Review)
+**Sprint review:** 7 findings from agents → 5 fixed, 2 skipped (1 consistent pattern, 1 false positive)
+**Live smoke test:** 21/21 tools passing against live Substack API
+**Bonus fixes:** 2 pre-existing bugs fixed (search_publications parsing, post_content redirects)
+**Tools added:** ss_get_saved_posts (3 filters), ss_save_post, ss_unsave_post
+**Total tools:** 19 (14 read + 4 write + 1 navigator)
+**Deployed:** v1.5.0 to ss-nav-3950b79a5cc7.fly.dev
 
 ---
 
