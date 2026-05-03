@@ -476,3 +476,26 @@ MCP server blocked Perplexity/Claude from deep research: full article content ne
 - Test count: 269
 - Voice gate enforced on all text-posting tools
 - Live at https://ss-nav-3950b79a5cc7.fly.dev/mcp
+
+### Sprint 7 — APPROVED 2026-05-02
+
+**Sprint summary:**
+- 24 new MCP tools across 5 batches (read tool count: 19 → 43)
+- 318 tests passing (was 240; net +78 after summarizer removal -18)
+- Foundations: removed summarizer, async dedup via asyncio.to_thread (eliminates event-loop blocking, max health probe 0.004ms vs 100ms threshold)
+- Voice gate primitive (src/voice_check.py) catches em dash, en dash, semicolon, colon-except-label-pattern, banned words, AI-tell phrases. Force=True bypass per write tool.
+- Tier 1 writes (Batch 3, 9 tools): publish_note, restack/unrestack with optional quote, comment_on_post + get_post_comments, get_note_replies, react (generalizes ss_like), delete (host-disambiguated), upload_image
+- Article drafts + scheduling (Batch 4, 8 tools): list/get/create/update/delete drafts, publish_draft, schedule_post, unschedule_post
+- Note drafts + scheduling + following (Batch 5, 7 tools, all HAR-confirmed via may2capture.har): create_note_draft, schedule_note, list_note_drafts, cancel_scheduled_note, follow, unfollow, list_following
+- Growth playbook baked into ss_navigator (algorithm weights, note format rules, restack patterns, 7-day amplification flow, voice rules per format)
+- 4 review-pass fixes from parallel code-reviewer agents: voice regex (`[:\b]` → `(?::|\b)`), 401 handling in subdomain resolver, drafts md→prosemirror limitation documented
+
+**Deferred to Sprint 8:**
+- ss_send_dm (no HAR confirmation; Substack DMs likely use Zync websocket transport)
+- ss_reply_to_note (per Miles 2026-05-02)
+
+**Permanently out of scope:**
+- ss_subscribe_to_pub / ss_unsubscribe (per Miles)
+
+**Live at:** https://ss-nav-3950b79a5cc7.fly.dev/mcp
+**Reference doc:** docs/SUBSTACK_MCP_REFERENCE.md v1.9.0
