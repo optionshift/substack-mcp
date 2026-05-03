@@ -22,6 +22,12 @@ from src.tools.drafts import (
 from src.tools.like import like_content
 from src.tools.fyp_feed import get_fyp_feed
 from src.tools.navigator import get_navigator
+from src.tools.note_drafts import (
+    cancel_scheduled_note,
+    create_note_draft,
+    list_note_drafts,
+    schedule_note,
+)
 from src.tools.likes import get_likes
 from src.tools.note_replies import get_note_replies
 from src.tools.notes_feed import get_notes_feed
@@ -353,6 +359,31 @@ async def ss_schedule_post(draft_id: str, post_date_iso: str) -> dict:
 async def ss_unschedule_post(draft_id: str) -> dict:
     """Cancel a scheduled article publish. Params: draft_id."""
     return await unschedule_post(draft_id=draft_id)
+
+
+@mcp.tool()
+async def ss_create_note_draft(text: str, force: bool = False) -> dict:
+    """Create a Note draft (unscheduled). Voice-checked. Params: text, force."""
+    return await create_note_draft(text=text, force=force)
+
+
+@mcp.tool()
+async def ss_schedule_note(text: str, trigger_at_iso: str, force: bool = False) -> dict:
+    """Schedule a Note for a future time. Voice-checked.
+    Params: text, trigger_at_iso (ISO-8601 UTC e.g. 2026-06-01T00:00:00Z), force."""
+    return await schedule_note(text=text, trigger_at_iso=trigger_at_iso, force=force)
+
+
+@mcp.tool()
+async def ss_list_note_drafts(limit: int = 20) -> dict:
+    """List Note drafts and scheduled notes. Filter by trigger_at != null for scheduled."""
+    return await list_note_drafts(limit=limit)
+
+
+@mcp.tool()
+async def ss_cancel_scheduled_note(comment_id: str) -> dict:
+    """Cancel a scheduled Note (or delete a Note draft). Params: comment_id."""
+    return await cancel_scheduled_note(comment_id=comment_id)
 
 
 # -- Health & transport --
