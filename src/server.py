@@ -29,6 +29,7 @@ from src.tools.restack import restack_content, unrestack_content
 from src.tools.save_post import save_post, unsave_post
 from src.tools.saved_posts import get_saved_posts
 from src.tools.subscriptions import get_subscriptions
+from src.tools.upload_image import upload_image
 
 
 FLY_HOST = os.environ.get("FLY_APP_NAME", "ss-nav-3950b79a5cc7") + ".fly.dev"
@@ -247,6 +248,13 @@ async def ss_delete(target_id: str, kind: str, post_id: str | None = None) -> di
     """Delete a note or a post comment. For 'post_comment', also pass post_id.
     Params: target_id, kind ('note' or 'post_comment'), post_id (required for post_comment)."""
     return await delete_content(target_id=target_id, kind=kind, post_id=post_id)
+
+
+@mcp.tool()
+async def ss_upload_image(image_data: str) -> dict:
+    """Upload an image. Returns CDN URL usable as note attachment.
+    Params: image_data (data URI 'data:image/jpeg;base64,...')."""
+    return await upload_image(image_data=image_data)
 
 
 @mcp.tool()
