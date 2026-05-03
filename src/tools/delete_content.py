@@ -38,7 +38,9 @@ async def delete_content(target_id: str, kind: str, post_id: str | None = None) 
             return {"error": True, "code": "VALIDATION",
                     "message": "post_id must be numeric", "retry_after": None}
 
-        subdomain = await resolve_publication_subdomain(post_id_int)
+        subdomain, auth_err = await resolve_publication_subdomain(post_id_int)
+        if auth_err:
+            return auth_err
         if subdomain is None:
             return {"error": True, "code": "VALIDATION",
                     "message": f"could not resolve publication for post {post_id}",

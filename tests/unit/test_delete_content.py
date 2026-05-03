@@ -32,7 +32,7 @@ class TestDeleteContent:
         from src.tools.delete_content import delete_content
 
         with patch("src.tools.delete_content.get_client") as mock_gc, \
-             patch("src.tools.delete_content.resolve_publication_subdomain", new=AsyncMock(return_value="lenny")):
+             patch("src.tools.delete_content.resolve_publication_subdomain", new=AsyncMock(return_value=("lenny", None))):
             mock_client = AsyncMock()
             mock_client.get_cookies.return_value = {"substack.sid": "x"}
             mock_gc.return_value = mock_client

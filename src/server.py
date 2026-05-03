@@ -333,13 +333,20 @@ async def ss_delete_draft(draft_id: str) -> dict:
 
 @mcp.tool()
 async def ss_create_draft(title: str, body_markdown: str, subtitle: str | None = None, force: bool = False) -> dict:
-    """Create an article draft. Voice-checked. Params: title, body_markdown, subtitle (optional), force."""
+    """Create an article draft. Voice-checked. NOTE: body_markdown is treated as
+    plain paragraphs split on blank lines — markdown formatting (headings, lists,
+    bold, links, code) is NOT converted to ProseMirror. Rich formatting must be
+    added in Substack's editor after creating the draft.
+    Params: title, body_markdown, subtitle (optional), force."""
     return await create_draft(title=title, body_markdown=body_markdown, subtitle=subtitle, force=force)
 
 
 @mcp.tool()
 async def ss_update_draft(draft_id: str, fields: dict, force: bool = False) -> dict:
     """Update fields on an existing article draft. Voice-checked when string fields change.
+    NOTE: body_markdown is treated as plain paragraphs split on blank lines — markdown
+    formatting (headings, lists, bold, links, code) is NOT converted to ProseMirror.
+    Rich formatting must be added in Substack's editor after updating the draft.
     Params: draft_id, fields (dict of allowed fields), force."""
     return await update_draft(draft_id=draft_id, fields=fields, force=force)
 

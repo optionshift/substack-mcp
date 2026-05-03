@@ -48,6 +48,18 @@ class TestVoiceCheck:
         violations = check("ten thousand creators. let that sink in.")
         assert any(v.rule == "ai_pattern" for v in violations)
 
+    def test_ai_pattern_unpopular_opinion_with_period(self):
+        violations = check("unpopular opinion. nobody cares about your stack")
+        assert any(v.rule == "ai_pattern" for v in violations)
+
+    def test_ai_pattern_unpopular_opinion_with_word(self):
+        violations = check("unpopular opinion that nobody cares")
+        assert any(v.rule == "ai_pattern" for v in violations)
+
+    def test_ai_pattern_hot_take_with_period(self):
+        violations = check("hot take. ai will not replace developers")
+        assert any(v.rule == "ai_pattern" for v in violations)
+
     def test_violation_to_dict(self):
         violations = check("we leverage synergy")
         assert len(violations) >= 1
@@ -58,5 +70,5 @@ class TestVoiceCheck:
         assert check("") == []
 
     def test_none_passes(self):
-        # check(None) should not crash; allow either empty list or graceful behavior
-        assert check(None) == [] or check(None) is not None
+        # check(None) should not crash; should return empty list
+        assert check(None) == []

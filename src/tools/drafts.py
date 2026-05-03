@@ -90,7 +90,12 @@ async def delete_draft(draft_id: str) -> dict:
 
 
 def _md_to_prosemirror(md: str) -> dict:
-    """Minimal markdown-to-ProseMirror converter. For now, paragraph-only."""
+    """Minimal markdown-to-ProseMirror converter — paragraph-plain-text only.
+
+    LIMITATIONS: does NOT convert headings, lists, bold/italic, links, code blocks,
+    or any other inline formatting. Treats markdown as plain text split on \\n\\n.
+    For rich-formatted drafts, do the formatting in Substack's editor after publishing.
+    """
     paragraphs = [p.strip() for p in (md or "").split("\n\n") if p.strip()]
     return {
         "type": "doc",

@@ -17,7 +17,7 @@ class TestCommentOnPost:
         from src.tools.comment_on_post import comment_on_post
 
         with patch("src.tools.comment_on_post.get_client") as mock_gc, \
-             patch("src.tools.comment_on_post.resolve_publication_subdomain", new=AsyncMock(return_value="lenny")):
+             patch("src.tools.comment_on_post.resolve_publication_subdomain", new=AsyncMock(return_value=("lenny", None))):
             mock_client = AsyncMock()
             mock_client.get_cookies.return_value = {"substack.sid": "x"}
             mock_gc.return_value = mock_client
@@ -54,7 +54,7 @@ class TestCommentOnPost:
         from src.tools.comment_on_post import comment_on_post
 
         with patch("src.tools.comment_on_post.get_client") as mock_gc, \
-             patch("src.tools.comment_on_post.resolve_publication_subdomain", new=AsyncMock(return_value="lenny")):
+             patch("src.tools.comment_on_post.resolve_publication_subdomain", new=AsyncMock(return_value=("lenny", None))):
             mock_client = AsyncMock()
             mock_client.get_cookies.return_value = {"substack.sid": "x"}
             mock_gc.return_value = mock_client
@@ -70,11 +70,30 @@ class TestCommentOnPost:
         assert body["parent_id"] == 55
 
     @pytest.mark.asyncio
+    async def test_resolve_subdomain_returns_auth_error_on_401(self):
+        """resolve_publication_subdomain should signal AUTH_EXPIRED on 401, not None."""
+        from src.tools.comment_on_post import resolve_publication_subdomain
+
+        with patch("src.tools.comment_on_post.get_client") as mock_gc:
+            mock_client = AsyncMock()
+            mock_client.get.return_value = httpx.Response(
+                401,
+                json={},
+                request=httpx.Request("GET", "https://substack.com/api/v1/posts/by-id/123"),
+            )
+            mock_gc.return_value = mock_client
+
+            sub, err = await resolve_publication_subdomain(123)
+
+        assert sub is None
+        assert err is not None and err["code"] == "AUTH_EXPIRED"
+
+    @pytest.mark.asyncio
     async def test_get_post_comments(self):
         from src.tools.comment_on_post import get_post_comments
 
         with patch("src.tools.comment_on_post.get_client") as mock_gc, \
-             patch("src.tools.comment_on_post.resolve_publication_subdomain", new=AsyncMock(return_value="lenny")):
+             patch("src.tools.comment_on_post.resolve_publication_subdomain", new=AsyncMock(return_value=("lenny", None))):
             mock_client = AsyncMock()
             mock_client.get_cookies.return_value = {"substack.sid": "x"}
             mock_gc.return_value = mock_client

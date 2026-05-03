@@ -8,20 +8,31 @@ def get_client():
     return create_client()
 
 
-async def resolve_publication_subdomain(post_id_int: int) -> str | None:
+async def resolve_publication_subdomain(post_id_int: int) -> tuple[str | None, dict | None]:
     """Look up a post's publication subdomain via /api/v1/posts/by-id/{id}.
-    Returns the subdomain (e.g., 'lenny') or None on failure."""
+    Returns (subdomain, error_dict). subdomain is None on failure.
+    error_dict is set only when auth has expired (401)."""
     client = get_client()
     if client is None:
-        return None
+        return None, {
+            "error": True, "code": "AUTH_EXPIRED",
+            "message": "Session cookie not configured.",
+            "retry_after": None,
+        }
     try:
         resp = await client.get(f"/api/v1/posts/by-id/{post_id_int}")
+        if resp.status_code == 401:
+            return None, {
+                "error": True, "code": "AUTH_EXPIRED",
+                "message": "Session cookie expired. Rotate via browser DevTools.",
+                "retry_after": None,
+            }
         if resp.status_code != 200:
-            return None
+            return None, None
         data = resp.json()
-        return data.get("publication", {}).get("subdomain")
+        return data.get("publication", {}).get("subdomain"), None
     except Exception:
-        return None
+        return None, None
 
 
 async def comment_on_post(
@@ -63,7 +74,9 @@ async def comment_on_post(
         return {"error": True, "code": "AUTH_EXPIRED",
                 "message": "Session cookie not configured.", "retry_after": None}
 
-    subdomain = await resolve_publication_subdomain(post_id_int)
+    subdomain, auth_err = await resolve_publication_subdomain(post_id_int)
+    if auth_err:
+        return auth_err
     if subdomain is None:
         return {"error": True, "code": "VALIDATION",
                 "message": f"could not resolve publication for post {post_id}",
@@ -104,7 +117,9 @@ async def get_post_comments(post_id: str, sort: str = "best_first") -> dict:
         return {"error": True, "code": "AUTH_EXPIRED",
                 "message": "Session cookie not configured.", "retry_after": None}
 
-    subdomain = await resolve_publication_subdomain(post_id_int)
+    subdomain, auth_err = await resolve_publication_subdomain(post_id_int)
+    if auth_err:
+        return auth_err
     if subdomain is None:
         return {"error": True, "code": "VALIDATION",
                 "message": f"could not resolve publication for post {post_id}",
@@ -119,6 +134,10 @@ async def get_post_comments(post_id: str, sort: str = "best_first") -> dict:
     except Exception as e:
         return {"error": True, "code": "UNKNOWN", "message": str(e), "retry_after": None}
 
+    if resp.status_code == 401:
+        return {"error": True, "code": "AUTH_EXPIRED",
+                "message": "Session cookie expired. Rotate via browser DevTools.",
+                "retry_after": None}
     if resp.status_code != 200:
         return {"error": True, "code": "UNKNOWN",
                 "message": f"Unexpected status {resp.status_code}", "retry_after": None}

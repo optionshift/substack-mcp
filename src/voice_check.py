@@ -21,8 +21,8 @@ AI_PATTERNS = [
     r"let that sink in",
     r"read that again",
     r"full stop\.",
-    r"unpopular opinion[:\b]",
-    r"hot take[:\b]",
+    r"unpopular opinion(?::|\b)",
+    r"hot take(?::|\b)",
     r"nobody is talking about",
 ]
 
