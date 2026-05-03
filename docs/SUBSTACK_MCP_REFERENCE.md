@@ -45,7 +45,7 @@ Optimized for **Option Shift's content engine** — daily ingestion of Substack 
 | Property | Value |
 |----------|-------|
 | Name | ss-navigator |
-| Version | 1.1.0 |
+| Version | 1.6.0 |
 | Protocol | MCP 2025-03-26 |
 | Transport | StreamableHTTP (production) or stdio (local) |
 | Language | Python 3.12+ |
@@ -846,12 +846,12 @@ Validate:   ss_auth_check (caches user_id)
 
 ---
 
-*Document Version: 1.1.0*
+*Document Version: 1.6.0*
 *Last Updated: May 2, 2026*
-*Compatible with: Substack MCP Server v1.1*
+*Compatible with: Substack MCP Server v1.6*
 
 ### Changelog
-- **1.1.0** (2026-05-02): Removed summarizer (Sprint 7 Batch 1). Dropped `google-genai` dependency, removed `summarize` param from all read tools. Feed tools now always return full markdown via `content` field. 19 tools total, 222 tests.
+- **1.6.0** (2026-05-02): Removed summarizer (Sprint 7 Batch 1). Dropped `google-genai` dependency, removed `summarize` param from all read tools. Feed tools now always return full markdown via `content` field. 19 tools total, 222 tests.
 - **1.5.0**: Saved Posts & Playbook Pipeline. Added `ss_get_saved_posts` (reading list with inbox_type filters: saved/seen/paid, server-side joins of posts+publications+savedPosts+inboxItems, read_progress tracking), `ss_save_post` (bookmark articles), `ss_unsave_post` (remove from queue after processing). Added `delete()` to SubstackClient. 2 new workflows (Saved Posts → Playbook, Morning Engagement Check). 19 tools total, 235 tests.
 - **1.4.0**: Added `ss_search_trending` (trending articles with recency/engagement scores), `ss_get_my_posts` (creator's published posts, subdomain-scoped), `ss_mark_seen` (mark feed items as read). 16 tools total, 200 tests.
 - **1.3.0**: Deep Research Enablement. Two-tier content architecture: feed tools return summaries with `hint` field, `ss_get_post_content` returns full untruncated markdown. New `ss_search_posts` tool for article search with time/scope filters (HAR-verified `/api/v1/post/search`). Removed 2000-char content truncation. Summarizer key allowlisting to prevent field clobbering. 13 tools total, 171 tests.
