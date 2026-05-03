@@ -9,6 +9,7 @@ from src.tools.auth import auth_check
 from src.tools.activity_feed import get_activity_feed
 from src.tools.comment_on_post import comment_on_post, get_post_comments
 from src.tools.delete_content import delete_content
+from src.tools.drafts import delete_draft, get_draft, list_drafts
 from src.tools.like import like_content
 from src.tools.fyp_feed import get_fyp_feed
 from src.tools.navigator import get_navigator
@@ -294,6 +295,24 @@ async def ss_get_post_comments(post_id: str, sort: str = "best_first") -> dict:
 async def ss_get_note_replies(note_id: str, cursor: str | None = None) -> dict:
     """Get replies on a Note thread. Params: note_id, cursor (for pagination)."""
     return await get_note_replies(note_id=note_id, cursor=cursor)
+
+
+@mcp.tool()
+async def ss_list_drafts(limit: int = 20, offset: int = 0) -> dict:
+    """List your article drafts. Params: limit, offset."""
+    return await list_drafts(limit=limit, offset=offset)
+
+
+@mcp.tool()
+async def ss_get_draft(draft_id: str) -> dict:
+    """Fetch a single article draft by id."""
+    return await get_draft(draft_id=draft_id)
+
+
+@mcp.tool()
+async def ss_delete_draft(draft_id: str) -> dict:
+    """Delete an article draft."""
+    return await delete_draft(draft_id=draft_id)
 
 
 # -- Health & transport --
