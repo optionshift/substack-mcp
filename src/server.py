@@ -8,6 +8,7 @@ from starlette.responses import HTMLResponse, JSONResponse, RedirectResponse
 from src.tools.auth import auth_check
 from src.tools.activity_feed import get_activity_feed
 from src.tools.comment_on_post import comment_on_post, get_post_comments
+from src.tools.delete_content import delete_content
 from src.tools.like import like_content
 from src.tools.fyp_feed import get_fyp_feed
 from src.tools.navigator import get_navigator
@@ -239,6 +240,13 @@ async def ss_react(target_id: str, kind: str, emoji: str = "❤") -> dict:
     """React to a post or note with any emoji. Generalizes ss_like.
     Params: target_id, kind ('post' or 'note'), emoji (default ❤)."""
     return await react(target_id=target_id, kind=kind, emoji=emoji)
+
+
+@mcp.tool()
+async def ss_delete(target_id: str, kind: str, post_id: str | None = None) -> dict:
+    """Delete a note or a post comment. For 'post_comment', also pass post_id.
+    Params: target_id, kind ('note' or 'post_comment'), post_id (required for post_comment)."""
+    return await delete_content(target_id=target_id, kind=kind, post_id=post_id)
 
 
 @mcp.tool()
