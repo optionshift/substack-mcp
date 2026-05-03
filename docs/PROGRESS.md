@@ -432,3 +432,14 @@ MCP server blocked Perplexity/Claude from deep research: full article content ne
 
 ### Test Results
 **200 tests passing, 0 failures** (+29 from Sprint 4)
+
+---
+
+## Sprint 7 — Write tools, voice gate, async dedup
+
+### Batch 1: Foundations — DONE 2026-05-02
+- Removed summarizer (8 tools simplified, -18 tests)
+- Async dedup via asyncio.to_thread (+1 concurrency test, max health probe 0.004ms vs 100ms threshold)
+- ss_navigator growth playbook added (+1 test)
+- Deployed to Fly, verified live, GOOGLE_AI_API_KEY secret removed
+- Test count: ~224
