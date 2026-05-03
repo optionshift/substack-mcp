@@ -9,7 +9,6 @@ import markdownify
 
 from src.dedup import DedupCache
 from src.substack_client import create_client
-from src.summarizer import summarize as run_summarize
 from src.tools.subscriptions import get_subscriptions
 
 SUB_ENDPOINT = "/api/v1/reader/feed"
@@ -94,7 +93,6 @@ def _parse_rss_item(item: ET.Element, pub_name: str) -> dict:
 async def _fetch_via_rss(
     limit: int,
     since_dt: datetime | None,
-    summarize: bool,
     cache: DedupCache,
 ) -> list:
     subs = await get_subscriptions_list()
@@ -165,14 +163,7 @@ async def _fetch_via_rss(
                 "hint": CONTENT_HINT,
             }
 
-            if summarize:
-                summary_result = await run_summarize(parsed["markdown"])
-                if "raw_content" in summary_result:
-                    article["raw_content"] = summary_result["raw_content"]
-                else:
-                    article.update(summary_result)
-            else:
-                article["content"] = parsed["markdown"]
+            article["content"] = parsed["markdown"]
 
             articles.append(article)
 
@@ -182,7 +173,6 @@ async def _fetch_via_rss(
 async def get_subscription_feed(
     limit: int = 30,
     since: str | None = None,
-    summarize: bool = True,
 ) -> list | dict:
     client = get_client()
     if client is None:
@@ -207,10 +197,10 @@ async def get_subscription_feed(
             SUB_ENDPOINT, params={"tab": "subscribed", "type": "secondary"}
         )
     except Exception:
-        return await _fetch_via_rss(limit, since_dt, summarize, cache)
+        return await _fetch_via_rss(limit, since_dt, cache)
 
     if response.status_code != 200:
-        return await _fetch_via_rss(limit, since_dt, summarize, cache)
+        return await _fetch_via_rss(limit, since_dt, cache)
 
     data = response.json()
     items = data.get("items", [])
@@ -261,14 +251,7 @@ async def get_subscription_feed(
             "hint": CONTENT_HINT,
         }
 
-        if summarize:
-            summary_result = await run_summarize(parsed["markdown"])
-            if "raw_content" in summary_result:
-                article["raw_content"] = summary_result["raw_content"]
-            else:
-                article.update(summary_result)
-        else:
-            article["content"] = parsed["markdown"]
+        article["content"] = parsed["markdown"]
 
         articles.append(article)
 

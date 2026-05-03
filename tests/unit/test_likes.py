@@ -24,15 +24,6 @@ MOCK_LIKES_RESPONSE = {
     ],
 }
 
-MOCK_SUMMARY = {
-    "summary": "Test summary.",
-    "tags": ["creator-economy"],
-    "relevance": 9,
-    "key_quote": "A quote.",
-    "angle": "An angle",
-}
-
-
 class TestLikesFeed:
     """Test returns liked articles."""
 
@@ -50,8 +41,7 @@ class TestLikesFeed:
 
         with patch("src.tools.likes.get_client") as mock_gc, \
              patch("src.tools.likes.get_cache", return_value=cache), \
-             patch("src.tools.likes.get_cached_user_id", return_value="12345"), \
-             patch("src.tools.likes.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.likes.get_cached_user_id", return_value="12345"):
             mock_client = AsyncMock()
             mock_client.get.return_value = mock_response
             mock_gc.return_value = mock_client
@@ -76,8 +66,7 @@ class TestLikesFeed:
 
         with patch("src.tools.likes.get_client") as mock_gc, \
              patch("src.tools.likes.get_cache", return_value=cache), \
-             patch("src.tools.likes.get_cached_user_id", return_value="12345"), \
-             patch("src.tools.likes.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.likes.get_cached_user_id", return_value="12345"):
             mock_client = AsyncMock()
             mock_client.get.return_value = mock_response
             mock_gc.return_value = mock_client
@@ -140,8 +129,7 @@ class TestLikesFeed:
 
         with patch("src.tools.likes.get_client") as mock_gc, \
              patch("src.tools.likes.get_cache", return_value=cache), \
-             patch("src.tools.likes.get_cached_user_id", return_value="12345"), \
-             patch("src.tools.likes.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.likes.get_cached_user_id", return_value="12345"):
             mock_client = AsyncMock()
             mock_client.get.return_value = mock_response
             mock_gc.return_value = mock_client
@@ -174,8 +162,7 @@ class TestLikesFeed:
 
         with patch("src.tools.likes.get_client") as mock_gc, \
              patch("src.tools.likes.get_cache", return_value=cache), \
-             patch("src.tools.likes.get_cached_user_id", return_value="12345"), \
-             patch("src.tools.likes.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.likes.get_cached_user_id", return_value="12345"):
             mock_client = AsyncMock()
             mock_client.get.return_value = mock_response
             mock_gc.return_value = mock_client
@@ -187,7 +174,7 @@ class TestLikesFeed:
             assert "ss_get_post_content" in article["hint"]
 
     @pytest.mark.asyncio
-    async def test_content_not_truncated_when_summarize_false(self):
+    async def test_content_not_truncated(self):
         from src.tools.likes import get_likes
         from src.dedup import DedupCache
 
@@ -225,6 +212,6 @@ class TestLikesFeed:
             mock_client.get.return_value = mock_response
             mock_gc.return_value = mock_client
 
-            result = await get_likes(summarize=False)
+            result = await get_likes()
 
         assert len(result[0]["content"]) > 2000

@@ -68,15 +68,6 @@ MOCK_FYP_PAGE2 = {
     ],
 }
 
-MOCK_SUMMARY = {
-    "summary": "Test summary.",
-    "tags": ["AI-agents"],
-    "relevance": 8,
-    "key_quote": "A quote.",
-    "angle": "An angle",
-}
-
-
 class TestFYPFeedBasic:
     """Test FYP feed returns articles with dedup applied."""
 
@@ -93,8 +84,7 @@ class TestFYPFeedBasic:
         )
 
         with patch("src.tools.fyp_feed.get_client") as mock_get_client, \
-             patch("src.tools.fyp_feed.get_cache", return_value=cache), \
-             patch("src.tools.fyp_feed.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.fyp_feed.get_cache", return_value=cache):
             mock_client = AsyncMock()
             mock_client.get.return_value = mock_response
             mock_get_client.return_value = mock_client
@@ -117,8 +107,7 @@ class TestFYPFeedBasic:
         )
 
         with patch("src.tools.fyp_feed.get_client") as mock_get_client, \
-             patch("src.tools.fyp_feed.get_cache", return_value=cache), \
-             patch("src.tools.fyp_feed.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.fyp_feed.get_cache", return_value=cache):
             mock_client = AsyncMock()
             mock_client.get.return_value = mock_response
             mock_get_client.return_value = mock_client
@@ -158,8 +147,7 @@ class TestFYPFeedDedup:
         )
 
         with patch("src.tools.fyp_feed.get_client") as mock_get_client, \
-             patch("src.tools.fyp_feed.get_cache", return_value=cache), \
-             patch("src.tools.fyp_feed.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.fyp_feed.get_cache", return_value=cache):
             mock_client = AsyncMock()
             mock_client.get.return_value = mock_response
             mock_get_client.return_value = mock_client
@@ -182,8 +170,7 @@ class TestFYPFeedDedup:
         )
 
         with patch("src.tools.fyp_feed.get_client") as mock_get_client, \
-             patch("src.tools.fyp_feed.get_cache", return_value=cache), \
-             patch("src.tools.fyp_feed.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.fyp_feed.get_cache", return_value=cache):
             mock_client = AsyncMock()
             mock_client.get.return_value = mock_response
             mock_get_client.return_value = mock_client
@@ -210,8 +197,7 @@ class TestFYPFeedSinceFilter:
         )
 
         with patch("src.tools.fyp_feed.get_client") as mock_get_client, \
-             patch("src.tools.fyp_feed.get_cache", return_value=cache), \
-             patch("src.tools.fyp_feed.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.fyp_feed.get_cache", return_value=cache):
             mock_client = AsyncMock()
             mock_client.get.return_value = mock_response
             mock_get_client.return_value = mock_client
@@ -223,39 +209,11 @@ class TestFYPFeedSinceFilter:
         assert result[0]["title"] == "AI Agents Are the Future"
 
 
-class TestFYPFeedSummarize:
-    """Test summarize param controls output."""
+class TestFYPFeedContent:
+    """Test articles always include full content."""
 
     @pytest.mark.asyncio
-    async def test_summarize_true_returns_summary_fields(self):
-        from src.tools.fyp_feed import get_fyp_feed
-        from src.dedup import DedupCache
-
-        cache = DedupCache(":memory:")
-        mock_response = httpx.Response(
-            200,
-            json=MOCK_FYP_RESPONSE,
-            request=httpx.Request("GET", "https://substack.com/api/v1/reader/feed"),
-        )
-
-        with patch("src.tools.fyp_feed.get_client") as mock_get_client, \
-             patch("src.tools.fyp_feed.get_cache", return_value=cache), \
-             patch("src.tools.fyp_feed.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
-            mock_client = AsyncMock()
-            mock_client.get.return_value = mock_response
-            mock_get_client.return_value = mock_client
-
-            result = await get_fyp_feed(summarize=True)
-
-        article = result[0]
-        assert "summary" in article
-        assert "tags" in article
-        assert "relevance" in article
-        assert "key_quote" in article
-        assert "angle" in article
-
-    @pytest.mark.asyncio
-    async def test_summarize_false_returns_full_content(self):
+    async def test_returns_full_content(self):
         from src.tools.fyp_feed import get_fyp_feed
         from src.dedup import DedupCache
 
@@ -272,7 +230,7 @@ class TestFYPFeedSummarize:
             mock_client.get.return_value = mock_response
             mock_get_client.return_value = mock_client
 
-            result = await get_fyp_feed(summarize=False)
+            result = await get_fyp_feed()
 
         article = result[0]
         assert "content" in article
@@ -295,8 +253,7 @@ class TestFYPFeedHintAndContent:
         )
 
         with patch("src.tools.fyp_feed.get_client") as mock_get_client, \
-             patch("src.tools.fyp_feed.get_cache", return_value=cache), \
-             patch("src.tools.fyp_feed.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.fyp_feed.get_cache", return_value=cache):
             mock_client = AsyncMock()
             mock_client.get.return_value = mock_response
             mock_get_client.return_value = mock_client
@@ -308,7 +265,7 @@ class TestFYPFeedHintAndContent:
             assert "ss_get_post_content" in article["hint"]
 
     @pytest.mark.asyncio
-    async def test_content_not_truncated_when_summarize_false(self):
+    async def test_content_not_truncated(self):
         from src.tools.fyp_feed import get_fyp_feed
         from src.dedup import DedupCache
 
@@ -345,7 +302,7 @@ class TestFYPFeedHintAndContent:
             mock_client.get.return_value = mock_response
             mock_get_client.return_value = mock_client
 
-            result = await get_fyp_feed(summarize=False)
+            result = await get_fyp_feed()
 
         assert len(result[0]["content"]) > 2000
 

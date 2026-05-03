@@ -40,14 +40,6 @@ MOCK_SUB_RESPONSE = {
     ],
 }
 
-MOCK_SUMMARY = {
-    "summary": "Test summary.",
-    "tags": ["creator-economy"],
-    "relevance": 7,
-    "key_quote": "A quote.",
-    "angle": "An angle",
-}
-
 MOCK_RSS_XML = """<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>
@@ -84,8 +76,7 @@ class TestSubscriptionFeedPrimary:
         )
 
         with patch("src.tools.subscription_feed.get_client") as mock_gc, \
-             patch("src.tools.subscription_feed.get_cache", return_value=cache), \
-             patch("src.tools.subscription_feed.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.subscription_feed.get_cache", return_value=cache):
             mock_client = AsyncMock()
             mock_client.get.return_value = mock_response
             mock_gc.return_value = mock_client
@@ -108,8 +99,7 @@ class TestSubscriptionFeedPrimary:
         )
 
         with patch("src.tools.subscription_feed.get_client") as mock_gc, \
-             patch("src.tools.subscription_feed.get_cache", return_value=cache), \
-             patch("src.tools.subscription_feed.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.subscription_feed.get_cache", return_value=cache):
             mock_client = AsyncMock()
             mock_client.get.return_value = mock_response
             mock_gc.return_value = mock_client
@@ -144,8 +134,7 @@ class TestSubscriptionFeedRSSFallback:
         with patch("src.tools.subscription_feed.get_client") as mock_gc, \
              patch("src.tools.subscription_feed.get_cache", return_value=cache), \
              patch("src.tools.subscription_feed.get_subscriptions_list", new_callable=AsyncMock, return_value=MOCK_SUBSCRIPTIONS), \
-             patch("src.tools.subscription_feed.fetch_rss", new_callable=AsyncMock, return_value=mock_rss_response), \
-             patch("src.tools.subscription_feed.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.subscription_feed.fetch_rss", new_callable=AsyncMock, return_value=mock_rss_response):
             mock_client = AsyncMock()
             mock_client.get.return_value = mock_api_response
             mock_gc.return_value = mock_client
@@ -175,8 +164,7 @@ class TestSubscriptionFeedRSSFallback:
         with patch("src.tools.subscription_feed.get_client") as mock_gc, \
              patch("src.tools.subscription_feed.get_cache", return_value=cache), \
              patch("src.tools.subscription_feed.get_subscriptions_list", new_callable=AsyncMock, return_value=MOCK_SUBSCRIPTIONS), \
-             patch("src.tools.subscription_feed.fetch_rss", new_callable=AsyncMock, return_value=mock_rss_response), \
-             patch("src.tools.subscription_feed.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.subscription_feed.fetch_rss", new_callable=AsyncMock, return_value=mock_rss_response):
             mock_client = AsyncMock()
             mock_client.get.return_value = mock_api_response
             mock_gc.return_value = mock_client
@@ -204,8 +192,7 @@ class TestSubscriptionFeedSinceFilter:
         )
 
         with patch("src.tools.subscription_feed.get_client") as mock_gc, \
-             patch("src.tools.subscription_feed.get_cache", return_value=cache), \
-             patch("src.tools.subscription_feed.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.subscription_feed.get_cache", return_value=cache):
             mock_client = AsyncMock()
             mock_client.get.return_value = mock_response
             mock_gc.return_value = mock_client
@@ -215,11 +202,11 @@ class TestSubscriptionFeedSinceFilter:
         assert len(result) == 1
 
 
-class TestSubscriptionFeedSummarize:
-    """Test summarization applied."""
+class TestSubscriptionFeedContent:
+    """Test articles always include full content."""
 
     @pytest.mark.asyncio
-    async def test_summarize_true_returns_summary(self):
+    async def test_returns_full_content(self):
         from src.tools.subscription_feed import get_subscription_feed
         from src.dedup import DedupCache
 
@@ -231,15 +218,15 @@ class TestSubscriptionFeedSummarize:
         )
 
         with patch("src.tools.subscription_feed.get_client") as mock_gc, \
-             patch("src.tools.subscription_feed.get_cache", return_value=cache), \
-             patch("src.tools.subscription_feed.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.subscription_feed.get_cache", return_value=cache):
             mock_client = AsyncMock()
             mock_client.get.return_value = mock_response
             mock_gc.return_value = mock_client
 
-            result = await get_subscription_feed(summarize=True)
+            result = await get_subscription_feed()
 
-        assert "summary" in result[0]
+        assert "content" in result[0]
+        assert "summary" not in result[0]
 
 
 class TestSubscriptionFeedEmpty:

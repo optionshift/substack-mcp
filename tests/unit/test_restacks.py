@@ -24,15 +24,6 @@ MOCK_RESTACKS_RESPONSE = {
     ],
 }
 
-MOCK_SUMMARY = {
-    "summary": "Test summary.",
-    "tags": ["creator-economy"],
-    "relevance": 10,
-    "key_quote": "A quote.",
-    "angle": "An angle",
-}
-
-
 class TestRestacksFeed:
     """Test returns restacked articles."""
 
@@ -50,8 +41,7 @@ class TestRestacksFeed:
 
         with patch("src.tools.restacks.get_client") as mock_gc, \
              patch("src.tools.restacks.get_cache", return_value=cache), \
-             patch("src.tools.restacks.get_cached_user_id", return_value="12345"), \
-             patch("src.tools.restacks.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.restacks.get_cached_user_id", return_value="12345"):
             mock_client = AsyncMock()
             mock_client.get.return_value = mock_response
             mock_gc.return_value = mock_client
@@ -76,8 +66,7 @@ class TestRestacksFeed:
 
         with patch("src.tools.restacks.get_client") as mock_gc, \
              patch("src.tools.restacks.get_cache", return_value=cache), \
-             patch("src.tools.restacks.get_cached_user_id", return_value="12345"), \
-             patch("src.tools.restacks.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.restacks.get_cached_user_id", return_value="12345"):
             mock_client = AsyncMock()
             mock_client.get.return_value = mock_response
             mock_gc.return_value = mock_client
@@ -149,8 +138,7 @@ class TestRestacksFeed:
 
         with patch("src.tools.restacks.get_client") as mock_gc, \
              patch("src.tools.restacks.get_cache", return_value=cache), \
-             patch("src.tools.restacks.get_cached_user_id", return_value="12345"), \
-             patch("src.tools.restacks.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.restacks.get_cached_user_id", return_value="12345"):
             mock_client = AsyncMock()
             mock_client.get.return_value = mock_response
             mock_gc.return_value = mock_client

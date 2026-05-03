@@ -1,4 +1,4 @@
-# Substack MCP Server v1.4 - Complete Reference
+# Substack MCP Server v1.1 - Complete Reference
 
 > **Purpose:** Complete reference documentation for the Substack MCP Server. Designed for LLM consumption to understand all capabilities, tools, and patterns for interacting with Substack's undocumented API.
 
@@ -29,7 +29,6 @@ The Substack MCP Server (`ss-navigator`) is a Model Context Protocol (MCP) serve
 - Activity tracking — see who liked, restacked, or replied to your content
 - Content retrieval — full article with HTML→Markdown conversion
 - Server-side dedup — SQLite cache prevents re-processing across sessions
-- Server-side summarization — Gemini Flash-Lite with graceful fallback
 - Publication discovery — search for new sources (no auth required)
 - Write operations — like/heart articles and notes
 
@@ -46,13 +45,13 @@ Optimized for **Option Shift's content engine** — daily ingestion of Substack 
 | Property | Value |
 |----------|-------|
 | Name | ss-navigator |
-| Version | 1.4.0 |
+| Version | 1.1.0 |
 | Protocol | MCP 2025-03-26 |
 | Transport | StreamableHTTP (production) or stdio (local) |
 | Language | Python 3.12+ |
 | Framework | FastMCP (`mcp[server]`) |
 | Tools | 19 (14 read + 4 write + 1 navigator) |
-| Tests | 240 (pytest + pytest-asyncio) |
+| Tests | 222 (pytest + pytest-asyncio) |
 | Deployment | Fly.io (LAX region) |
 
 ---
@@ -81,7 +80,6 @@ src/
 ├── __init__.py
 ├── substack_client.py     # httpx client (cookie auth, 1 req/sec rate limiting)
 ├── dedup.py               # SQLite dedup cache with schema versioning
-├── summarizer.py          # Gemini Flash-Lite summarization (async)
 ├── oauth/
 │   ├── __init__.py
 │   ├── db.py              # SQLite OAuth tables (clients, codes, tokens)
@@ -119,15 +117,6 @@ SQLite on Fly Volume (`/data/ss_navigator.db`):
 - Schema versioning via `schema_version` table
 - Atomic check-and-insert: `insert()` returns `False` for duplicates
 - Thread-safe with `asyncio.Lock`
-
-### 2.5 Summarizer
-
-Gemini 2.0 Flash-Lite via `google-genai` SDK:
-- Async: `await client.aio.models.generate_content()`
-- Pre-truncation: 15K chars max before sending to Gemini
-- Structured output: summary, tags, relevance, key_quote, angle
-- Graceful fallback: on failure → raw content (2000 chars)
-- Cost: ~$0.0006/article
 
 ---
 
@@ -195,14 +184,13 @@ Validate Substack session cookie and return user profile. Call before any authen
 
 #### 3.3 ss_get_fyp_feed — For You Feed
 
-Get personalized For You feed (algorithmic picks) with dedup and optional summarization.
+Get personalized For You feed (algorithmic picks) with dedup. Each article includes the full markdown `content` field.
 
 **Parameters:**
 | Name | Type | Required | Default | Description |
 |------|------|----------|---------|-------------|
 | limit | int | No | 20 | Max articles to return |
 | since | str | No | null | ISO date filter (exclude older) |
-| summarize | bool | No | true | Gemini summarization |
 
 **Endpoint:** `GET /api/v1/reader/feed?tab=for-you&type=base`
 
@@ -214,14 +202,13 @@ Get personalized For You feed (algorithmic picks) with dedup and optional summar
 
 #### 3.4 ss_get_subscription_feed — Subscription Feed
 
-Get all subscription posts by date with RSS fallback on API failure.
+Get all subscription posts by date with RSS fallback on API failure. Each article includes the full markdown `content` field.
 
 **Parameters:**
 | Name | Type | Required | Default | Description |
 |------|------|----------|---------|-------------|
 | limit | int | No | 30 | Max articles to return |
 | since | str | No | null | ISO date filter |
-| summarize | bool | No | true | Gemini summarization |
 
 **Endpoint:** `GET /api/v1/reader/feed?tab=subscribed&type=secondary`
 
@@ -262,22 +249,19 @@ Get short-form Notes feed with high-signal flagging.
 
 **Dedup:** Yes (by note ID)
 
-**Note:** No `summarize` param — notes are short-form, always returned raw.
-
 ---
 
 ### Signal Suite
 
 #### 3.6 ss_get_likes — Liked Content
 
-Get user's liked/hearted posts and notes (high signal). Requires cached `user_id` from `ss_auth_check`.
+Get user's liked/hearted posts and notes (high signal). Requires cached `user_id` from `ss_auth_check`. Each article includes the full markdown `content` field.
 
 **Parameters:**
 | Name | Type | Required | Default | Description |
 |------|------|----------|---------|-------------|
 | limit | int | No | 20 | Max items to return |
 | since | str | No | null | ISO date filter |
-| summarize | bool | No | true | Gemini summarization |
 
 **Endpoint:** `GET /api/v1/reader/feed/profile/{user_id}?types[]=like`
 
@@ -291,14 +275,13 @@ Get user's liked/hearted posts and notes (high signal). Requires cached `user_id
 
 #### 3.7 ss_get_restacks — Restacked Content
 
-Get user's restacked/shared posts (highest signal). Requires cached `user_id`.
+Get user's restacked/shared posts (highest signal). Requires cached `user_id`. Each article includes the full markdown `content` field.
 
 **Parameters:**
 | Name | Type | Required | Default | Description |
 |------|------|----------|---------|-------------|
 | limit | int | No | 20 | Max items to return |
 | since | str | No | null | ISO date filter |
-| summarize | bool | No | true | Gemini summarization |
 
 **Endpoint:** `GET /api/v1/reader/feed/profile/{user_id}?types[]=restack`
 
@@ -312,19 +295,18 @@ Get user's restacked/shared posts (highest signal). Requires cached `user_id`.
 
 #### 3.8 ss_get_post_content — Full Article (Deep Read)
 
-Read the full text of a Substack article. Use this after discovering articles via feed or search tools to get the complete content for deep research. Returns complete markdown — not truncated.
+Read the full text of a Substack article. Use this after discovering articles via search tools, or any time you need a single article's content. Returns complete markdown — not truncated.
 
 **Parameters:**
 | Name | Type | Required | Default | Description |
 |------|------|----------|---------|-------------|
 | url | str | Yes | - | Full Substack article URL |
-| summarize | bool | No | false | Set true to also get Gemini summary alongside full text |
 
 **Endpoint:** `GET https://{subdomain}.substack.com/api/v1/posts/{slug}`
 
-**Returns:** Single article object with full `content` field (complete markdown). When `summarize=True`, also includes `summary`, `tags`, `relevance`, `key_quote`, `angle`.
+**Returns:** Single article object with full `content` field (complete markdown).
 
-**Two-Tier Pattern:** Feed tools return summaries with a `hint` field pointing to this tool. Call this tool with the article URL to get the full text.
+**Two-Tier Pattern:** Search tools return article previews with a `hint` field pointing to this tool. Feed tools already include full content inline; use this tool when you only have a URL.
 
 **Dedup exception:** Does NOT skip already-seen articles, but DOES insert into `seen_articles` to prevent re-appearance in feed pulls.
 
@@ -515,7 +497,6 @@ Get saved articles, recently read posts, or paid-only content. Uses denormalized
 | inbox_type | str | No | `saved` | `saved` (bookmarks), `seen` (already read), `paid` (premium) |
 | limit | int | No | 20 | Max articles to return |
 | since | str | No | None | ISO timestamp filter (filters by `saved_at` for saved, `post_date` otherwise) |
-| summarize | bool | No | True | Return Gemini summaries or raw markdown |
 
 **Endpoint:** `GET /api/v1/reader/posts?inboxType={saved|seen|paid}&limit={n}`
 
@@ -595,7 +576,7 @@ All feed tools follow the same pattern:
 
 ### 4.2 Article Schema
 
-Standard return object from feed tools (when `summarize=true`):
+Standard return object from feed tools — articles always include the full markdown `content` field:
 ```json
 {
   "id": "substack_post_12345",
@@ -605,29 +586,14 @@ Standard return object from feed tools (when `summarize=true`):
   "url": "https://...",
   "published_at": "2026-03-06T10:00:00Z",
   "platform": "substack",
-  "summary": "2-3 sentence key argument",
-  "tags": ["creator-economy", "AI-agents"],
-  "relevance": 8,
-  "key_quote": "One notable sentence",
-  "angle": "Content hook for LinkedIn/Notes",
+  "content": "Full article markdown — not truncated",
   "is_new": true,
-  "source_feed": "fyp"
+  "source_feed": "fyp",
+  "hint": "Use ss_get_post_content with this URL to read the full article"
 }
 ```
 
-When `summarize=false`, summary/tags/relevance/key_quote/angle are replaced with:
-```json
-{
-  "raw_content": "First 2000 chars of markdown..."
-}
-```
-
-### 4.3 Fixed Tag Vocabulary
-
-Tags from summarization are constrained to:
-`creator-economy`, `AI-agents`, `monetization`, `platform-strategy`, `content-strategy`, `fundraising`, `product`, `engineering`, `culture`, `other`
-
-### 4.4 Source Feed Values
+### 4.3 Source Feed Values
 
 | Value | Tool |
 |-------|------|
@@ -640,14 +606,14 @@ Tags from summarization are constrained to:
 | `seen` | ss_get_saved_posts (inbox_type=seen) |
 | `paid` | ss_get_saved_posts (inbox_type=paid) |
 
-### 4.5 Cookie Auth
+### 4.4 Cookie Auth
 
 - Only `substack.sid` is needed (not `connect.sid`)
 - Cookie expiry: ~90 days from login
 - Current user ID: `383926424`
 - Rotation: browser DevTools → Application → Cookies → copy `substack.sid` → `fly secrets set`
 
-### 4.6 Rate Limiting
+### 4.5 Rate Limiting
 
 - Server enforces 1 request/second via `asyncio.sleep` in the httpx client
 - Applies to both `get()` and `post()` methods
@@ -665,7 +631,6 @@ Tags from summarization are constrained to:
 | VALIDATION | Invalid input parameters |
 | NOT_FOUND | Post or resource not found (404) |
 | RATE_LIMITED | Too many requests |
-| SUMMARIZATION_FAILED | Gemini summarization error (falls back to raw) |
 | UNKNOWN | Unexpected error (network, server, etc.) |
 
 ### 5.2 Error Response Format
@@ -689,7 +654,6 @@ All errors follow a standard shape:
 | Variable | Required | Description |
 |----------|----------|-------------|
 | SUBSTACK_SESSION_COOKIE | Yes | Substack `substack.sid` cookie value |
-| GOOGLE_AI_API_KEY | Yes | Gemini Flash-Lite API key |
 | OAUTH_PASSWORD | No | Enables OAuth 2.1 + PKCE when set. Single-user password for the login page. |
 | MCP_ENV | No | `production` for StreamableHTTP, else stdio |
 | SQLITE_PATH | No | SQLite db path (default: `/data/ss_navigator.db`) |
@@ -740,7 +704,6 @@ Enabled when `OAUTH_PASSWORD` env var is set. Uses FastMCP's built-in `OAuthAuth
 | Secret | Purpose |
 |--------|---------|
 | SUBSTACK_SESSION_COOKIE | Substack auth (~90 day expiry) |
-| GOOGLE_AI_API_KEY | Gemini Flash-Lite summarization |
 | OAUTH_PASSWORD | OAuth login page password |
 
 ### 6.5 Deploy Commands
@@ -787,11 +750,6 @@ Call `ss_auth_check` before any authenticated tool. It caches `user_id` needed b
 
 Don't worry about duplicate articles across sessions. The server tracks all seen articles in SQLite. Calling the same feed tool twice returns only new content.
 
-### 7.6 Summarize vs Raw
-
-- `summarize=true` (default): structured summary with tags, relevance score, key quote, content angle
-- `summarize=false`: raw markdown (2000 chars) — useful for debugging or when Gemini costs matter
-
 ---
 
 ## 8. Troubleshooting
@@ -809,10 +767,6 @@ Don't worry about duplicate articles across sessions. The server tracks all seen
 **Issue: Empty feed results**
 - Cause: All articles already seen (dedup) or `since` filter too restrictive
 - Solution: Check `since` param, or note that dedup is working correctly
-
-**Issue: Summarization returns raw_content instead of summary**
-- Cause: Gemini Flash-Lite API error (graceful fallback)
-- Solution: Check `GOOGLE_AI_API_KEY` secret, verify API quota
 
 **Issue: MCP endpoint returns 307 redirect**
 - Cause: Using `/mcp/` (trailing slash) instead of `/mcp`
@@ -834,7 +788,7 @@ Don't worry about duplicate articles across sessions. The server tracks all seen
 ```
 ss_navigator            — START here. Discover tools, workflows, API quirks
 ss_auth_check           — Validate cookie, cache user_id
-ss_get_fyp_feed         — For You feed (algorithmic, dedup, summarize)
+ss_get_fyp_feed         — For You feed (algorithmic, dedup)
 ss_get_subscription_feed — Subscription feed (chronological, RSS fallback)
 ss_get_notes_feed       — Notes feed (short-form, high_signal flagging)
 ss_get_likes            — Liked content (high signal, needs user_id)
@@ -892,11 +846,12 @@ Validate:   ss_auth_check (caches user_id)
 
 ---
 
-*Document Version: 1.5.0*
-*Last Updated: March 17, 2026*
-*Compatible with: Substack MCP Server v1.5*
+*Document Version: 1.1.0*
+*Last Updated: May 2, 2026*
+*Compatible with: Substack MCP Server v1.1*
 
 ### Changelog
+- **1.1.0** (2026-05-02): Removed summarizer (Sprint 7 Batch 1). Dropped `google-genai` dependency, removed `summarize` param from all read tools. Feed tools now always return full markdown via `content` field. 19 tools total, 222 tests.
 - **1.5.0**: Saved Posts & Playbook Pipeline. Added `ss_get_saved_posts` (reading list with inbox_type filters: saved/seen/paid, server-side joins of posts+publications+savedPosts+inboxItems, read_progress tracking), `ss_save_post` (bookmark articles), `ss_unsave_post` (remove from queue after processing). Added `delete()` to SubstackClient. 2 new workflows (Saved Posts → Playbook, Morning Engagement Check). 19 tools total, 235 tests.
 - **1.4.0**: Added `ss_search_trending` (trending articles with recency/engagement scores), `ss_get_my_posts` (creator's published posts, subdomain-scoped), `ss_mark_seen` (mark feed items as read). 16 tools total, 200 tests.
 - **1.3.0**: Deep Research Enablement. Two-tier content architecture: feed tools return summaries with `hint` field, `ss_get_post_content` returns full untruncated markdown. New `ss_search_posts` tool for article search with time/scope filters (HAR-verified `/api/v1/post/search`). Removed 2000-char content truncation. Summarizer key allowlisting to prevent field clobbering. 13 tools total, 171 tests.

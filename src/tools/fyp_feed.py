@@ -5,7 +5,6 @@ import markdownify
 
 from src.dedup import DedupCache
 from src.substack_client import create_client
-from src.summarizer import summarize as run_summarize
 
 FYP_ENDPOINT = "/api/v1/reader/feed"
 CONTENT_HINT = "Use ss_get_post_content with this URL to read the full article"
@@ -45,7 +44,6 @@ def _parse_article(post: dict) -> dict:
 async def get_fyp_feed(
     limit: int = 20,
     since: str | None = None,
-    summarize: bool = True,
 ) -> list | dict:
     client = get_client()
     if client is None:
@@ -151,14 +149,7 @@ async def get_fyp_feed(
             "hint": CONTENT_HINT,
         }
 
-        if summarize:
-            summary_result = await run_summarize(parsed["markdown"])
-            if "raw_content" in summary_result:
-                article["raw_content"] = summary_result["raw_content"]
-            else:
-                article.update(summary_result)
-        else:
-            article["content"] = parsed["markdown"]
+        article["content"] = parsed["markdown"]
 
         articles.append(article)
 

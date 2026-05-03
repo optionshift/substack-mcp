@@ -4,7 +4,6 @@ import httpx
 import markdownify
 
 from src.dedup import DedupCache
-from src.summarizer import summarize as run_summarize
 
 CONTENT_HINT = "Use ss_get_post_content with this URL to read the full article"
 
@@ -42,7 +41,6 @@ async def fetch_post(url: str) -> httpx.Response:
 
 async def get_post_content(
     url: str | None = None,
-    summarize: bool = False,
 ) -> dict:
     if not url:
         return {
@@ -118,10 +116,5 @@ async def get_post_content(
 
     # Always include full content
     article["content"] = markdown
-
-    if summarize:
-        summary_result = await run_summarize(markdown)
-        if "raw_content" not in summary_result:
-            article.update(summary_result)
 
     return article

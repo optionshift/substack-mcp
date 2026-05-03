@@ -9,11 +9,11 @@ TOOLS = [
     },
     {
         "name": "ss_get_fyp_feed",
-        "description": "Personalized 'For You' feed (algorithmic). Params: limit, since, summarize.",
+        "description": "Personalized 'For You' feed (algorithmic). Params: limit, since.",
     },
     {
         "name": "ss_get_subscription_feed",
-        "description": "All subscription posts by date. RSS fallback on API failure. Params: limit, since, summarize.",
+        "description": "All subscription posts by date. RSS fallback on API failure. Params: limit, since.",
     },
     {
         "name": "ss_get_notes_feed",
@@ -21,15 +21,15 @@ TOOLS = [
     },
     {
         "name": "ss_get_likes",
-        "description": "User's liked posts (high signal). Requires cached user_id from ss_auth_check. Params: limit, since, summarize.",
+        "description": "User's liked posts (high signal). Requires cached user_id from ss_auth_check. Params: limit, since.",
     },
     {
         "name": "ss_get_restacks",
-        "description": "User's restacked posts (highest signal). Requires cached user_id. Params: limit, since, summarize.",
+        "description": "User's restacked posts (highest signal). Requires cached user_id. Params: limit, since.",
     },
     {
         "name": "ss_get_post_content",
-        "description": "Read the FULL text of any article by URL. Use this after discovering articles via feed or search tools. Returns complete markdown. Set summarize=True for structured summary alongside full text. Params: url, summarize (default: False).",
+        "description": "Read the FULL text of any article by URL. Use this after discovering articles via feed or search tools. Returns complete markdown. Params: url.",
     },
     {
         "name": "ss_get_subscriptions",
@@ -61,7 +61,7 @@ TOOLS = [
     },
     {
         "name": "ss_get_saved_posts",
-        "description": "Get saved/bookmarked articles, recently read posts, or paid-only content. Params: inbox_type ('saved', 'seen', 'paid'), limit, since, summarize.",
+        "description": "Get saved/bookmarked articles, recently read posts, or paid-only content. Params: inbox_type ('saved', 'seen', 'paid'), limit, since.",
     },
     {
         "name": "ss_save_post",

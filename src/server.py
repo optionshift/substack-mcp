@@ -122,21 +122,21 @@ async def ss_auth_check() -> dict:
 
 
 @mcp.tool()
-async def ss_get_fyp_feed(limit: int = 20, since: str | None = None, summarize: bool = True) -> list | dict:
-    """Get personalized For You feed with dedup and optional summarization."""
-    return await get_fyp_feed(limit=limit, since=since, summarize=summarize)
+async def ss_get_fyp_feed(limit: int = 20, since: str | None = None) -> list | dict:
+    """Get personalized For You feed with dedup."""
+    return await get_fyp_feed(limit=limit, since=since)
 
 
 @mcp.tool()
-async def ss_get_likes(limit: int = 20, since: str | None = None, summarize: bool = True) -> list | dict:
+async def ss_get_likes(limit: int = 20, since: str | None = None) -> list | dict:
     """Get user's liked/hearted posts (high signal)."""
-    return await get_likes(limit=limit, since=since, summarize=summarize)
+    return await get_likes(limit=limit, since=since)
 
 
 @mcp.tool()
-async def ss_get_restacks(limit: int = 20, since: str | None = None, summarize: bool = True) -> list | dict:
+async def ss_get_restacks(limit: int = 20, since: str | None = None) -> list | dict:
     """Get user's restacked/shared posts (highest signal)."""
-    return await get_restacks(limit=limit, since=since, summarize=summarize)
+    return await get_restacks(limit=limit, since=since)
 
 
 @mcp.tool()
@@ -146,15 +146,15 @@ async def ss_get_notes_feed(limit: int = 30, since: str | None = None) -> list |
 
 
 @mcp.tool()
-async def ss_get_post_content(url: str | None = None, summarize: bool = False) -> dict:
-    """Read the full text of a Substack article. Use this after discovering articles via feed or search tools to get the complete content for deep research. Set summarize=True to also get a structured summary alongside the full text."""
-    return await get_post_content(url=url, summarize=summarize)
+async def ss_get_post_content(url: str | None = None) -> dict:
+    """Read the full text of a Substack article. Use this after discovering articles via feed or search tools to get the complete content for deep research."""
+    return await get_post_content(url=url)
 
 
 @mcp.tool()
-async def ss_get_subscription_feed(limit: int = 30, since: str | None = None, summarize: bool = True) -> list | dict:
-    """Get subscription feed with dedup, summarization, and RSS fallback."""
-    return await get_subscription_feed(limit=limit, since=since, summarize=summarize)
+async def ss_get_subscription_feed(limit: int = 30, since: str | None = None) -> list | dict:
+    """Get subscription feed with dedup and RSS fallback."""
+    return await get_subscription_feed(limit=limit, since=since)
 
 
 @mcp.tool()
@@ -206,9 +206,9 @@ async def ss_get_activity_feed(filter: str = "all", limit: int = 20) -> dict:
 
 
 @mcp.tool()
-async def ss_get_saved_posts(inbox_type: str = "saved", limit: int = 20, since: str | None = None, summarize: bool = True) -> list | dict:
+async def ss_get_saved_posts(inbox_type: str = "saved", limit: int = 20, since: str | None = None) -> list | dict:
     """Get saved/bookmarked articles, recently read posts, or paid-only content. inbox_type: 'saved' (bookmarks), 'seen' (already read), 'paid' (premium). Use ss_get_post_content with a result URL to read the full article."""
-    return await get_saved_posts(inbox_type=inbox_type, limit=limit, since=since, summarize=summarize)
+    return await get_saved_posts(inbox_type=inbox_type, limit=limit, since=since)
 
 
 @mcp.tool()

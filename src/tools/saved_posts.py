@@ -4,7 +4,6 @@ import markdownify
 
 from src.dedup import DedupCache
 from src.substack_client import create_client
-from src.summarizer import summarize as run_summarize
 
 CONTENT_HINT = "Use ss_get_post_content with this URL to read the full article"
 VALID_INBOX_TYPES = {"saved", "seen", "paid"}
@@ -27,7 +26,6 @@ async def get_saved_posts(
     inbox_type: str = "saved",
     limit: int = 20,
     since: str | None = None,
-    summarize: bool = True,
 ) -> list | dict:
     if inbox_type not in VALID_INBOX_TYPES:
         return {
@@ -157,14 +155,7 @@ async def get_saved_posts(
         if url:
             article["hint"] = CONTENT_HINT
 
-        if summarize:
-            summary_result = await run_summarize(markdown)
-            if "raw_content" in summary_result:
-                article["raw_content"] = summary_result["raw_content"]
-            else:
-                article.update(summary_result)
-        else:
-            article["content"] = markdown
+        article["content"] = markdown
 
         articles.append(article)
 

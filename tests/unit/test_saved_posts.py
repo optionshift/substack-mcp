@@ -69,15 +69,6 @@ MOCK_SAVED_RESPONSE = {
     "more": True,
 }
 
-MOCK_SUMMARY = {
-    "summary": "Test summary.",
-    "tags": ["startup"],
-    "relevance": 9,
-    "key_quote": "A quote.",
-    "angle": "An angle",
-}
-
-
 def _make_response(data=None, status=200):
     return httpx.Response(
         status,
@@ -97,8 +88,7 @@ class TestGetSavedPosts:
         cache = DedupCache(":memory:")
 
         with patch("src.tools.saved_posts.get_client") as mock_gc, \
-             patch("src.tools.saved_posts.get_cache", return_value=cache), \
-             patch("src.tools.saved_posts.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.saved_posts.get_cache", return_value=cache):
             mock_client = AsyncMock()
             mock_client.get.return_value = _make_response()
             mock_gc.return_value = mock_client
@@ -117,8 +107,7 @@ class TestGetSavedPosts:
         cache = DedupCache(":memory:")
 
         with patch("src.tools.saved_posts.get_client") as mock_gc, \
-             patch("src.tools.saved_posts.get_cache", return_value=cache), \
-             patch("src.tools.saved_posts.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.saved_posts.get_cache", return_value=cache):
             mock_client = AsyncMock()
             mock_client.get.return_value = _make_response()
             mock_gc.return_value = mock_client
@@ -137,8 +126,7 @@ class TestGetSavedPosts:
         cache = DedupCache(":memory:")
 
         with patch("src.tools.saved_posts.get_client") as mock_gc, \
-             patch("src.tools.saved_posts.get_cache", return_value=cache), \
-             patch("src.tools.saved_posts.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.saved_posts.get_cache", return_value=cache):
             mock_client = AsyncMock()
             mock_client.get.return_value = _make_response()
             mock_gc.return_value = mock_client
@@ -156,8 +144,7 @@ class TestGetSavedPosts:
         cache = DedupCache(":memory:")
 
         with patch("src.tools.saved_posts.get_client") as mock_gc, \
-             patch("src.tools.saved_posts.get_cache", return_value=cache), \
-             patch("src.tools.saved_posts.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.saved_posts.get_cache", return_value=cache):
             mock_client = AsyncMock()
             mock_client.get.return_value = _make_response()
             mock_gc.return_value = mock_client
@@ -175,8 +162,7 @@ class TestGetSavedPosts:
         cache = DedupCache(":memory:")
 
         with patch("src.tools.saved_posts.get_client") as mock_gc, \
-             patch("src.tools.saved_posts.get_cache", return_value=cache), \
-             patch("src.tools.saved_posts.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.saved_posts.get_cache", return_value=cache):
             mock_client = AsyncMock()
             mock_client.get.return_value = _make_response()
             mock_gc.return_value = mock_client
@@ -195,8 +181,7 @@ class TestGetSavedPosts:
         cache = DedupCache(":memory:")
 
         with patch("src.tools.saved_posts.get_client") as mock_gc, \
-             patch("src.tools.saved_posts.get_cache", return_value=cache), \
-             patch("src.tools.saved_posts.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.saved_posts.get_cache", return_value=cache):
             mock_client = AsyncMock()
             mock_client.get.return_value = _make_response()
             mock_gc.return_value = mock_client
@@ -215,8 +200,7 @@ class TestGetSavedPosts:
         cache = DedupCache(":memory:")
 
         with patch("src.tools.saved_posts.get_client") as mock_gc, \
-             patch("src.tools.saved_posts.get_cache", return_value=cache), \
-             patch("src.tools.saved_posts.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.saved_posts.get_cache", return_value=cache):
             mock_client = AsyncMock()
             mock_client.get.return_value = _make_response()
             mock_gc.return_value = mock_client
@@ -248,8 +232,7 @@ class TestGetSavedPosts:
         cache.insert("substack_post_162633402", "url", "title", "source", "saved")
 
         with patch("src.tools.saved_posts.get_client") as mock_gc, \
-             patch("src.tools.saved_posts.get_cache", return_value=cache), \
-             patch("src.tools.saved_posts.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.saved_posts.get_cache", return_value=cache):
             mock_client = AsyncMock()
             mock_client.get.return_value = _make_response()
             mock_gc.return_value = mock_client
@@ -268,8 +251,7 @@ class TestGetSavedPosts:
         cache = DedupCache(":memory:")
 
         with patch("src.tools.saved_posts.get_client") as mock_gc, \
-             patch("src.tools.saved_posts.get_cache", return_value=cache), \
-             patch("src.tools.saved_posts.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.saved_posts.get_cache", return_value=cache):
             mock_client = AsyncMock()
             mock_client.get.return_value = _make_response()
             mock_gc.return_value = mock_client
@@ -288,8 +270,7 @@ class TestGetSavedPosts:
         cache = DedupCache(":memory:")
 
         with patch("src.tools.saved_posts.get_client") as mock_gc, \
-             patch("src.tools.saved_posts.get_cache", return_value=cache), \
-             patch("src.tools.saved_posts.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.saved_posts.get_cache", return_value=cache):
             mock_client = AsyncMock()
             mock_client.get.return_value = _make_response()
             mock_gc.return_value = mock_client
@@ -306,8 +287,7 @@ class TestGetSavedPosts:
         cache = DedupCache(":memory:")
 
         with patch("src.tools.saved_posts.get_client") as mock_gc, \
-             patch("src.tools.saved_posts.get_cache", return_value=cache), \
-             patch("src.tools.saved_posts.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.saved_posts.get_cache", return_value=cache):
             mock_client = AsyncMock()
             mock_client.get.return_value = _make_response()
             mock_gc.return_value = mock_client
@@ -319,7 +299,7 @@ class TestGetSavedPosts:
             assert "ss_get_post_content" in article["hint"]
 
     @pytest.mark.asyncio
-    async def test_summarize_false_returns_content(self):
+    async def test_returns_content(self):
         from src.tools.saved_posts import get_saved_posts
         from src.dedup import DedupCache
 
@@ -331,11 +311,12 @@ class TestGetSavedPosts:
             mock_client.get.return_value = _make_response()
             mock_gc.return_value = mock_client
 
-            result = await get_saved_posts(summarize=False)
+            result = await get_saved_posts()
 
         assert len(result) == 2
         for article in result:
             assert "content" in article
+            assert "summary" not in article
 
     @pytest.mark.asyncio
     async def test_missing_cookie_returns_error(self):
@@ -397,8 +378,7 @@ class TestGetSavedPosts:
         cache = DedupCache(":memory:")
 
         with patch("src.tools.saved_posts.get_client") as mock_gc, \
-             patch("src.tools.saved_posts.get_cache", return_value=cache), \
-             patch("src.tools.saved_posts.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.saved_posts.get_cache", return_value=cache):
             mock_client = AsyncMock()
             mock_client.get.return_value = _make_response()
             mock_gc.return_value = mock_client
@@ -436,8 +416,7 @@ class TestGetSavedPosts:
         }
 
         with patch("src.tools.saved_posts.get_client") as mock_gc, \
-             patch("src.tools.saved_posts.get_cache", return_value=cache), \
-             patch("src.tools.saved_posts.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.saved_posts.get_cache", return_value=cache):
             mock_client = AsyncMock()
             mock_client.get.return_value = _make_response(data=data)
             mock_gc.return_value = mock_client
@@ -502,8 +481,7 @@ class TestGetSavedPosts:
         }
 
         with patch("src.tools.saved_posts.get_client") as mock_gc, \
-             patch("src.tools.saved_posts.get_cache", return_value=cache), \
-             patch("src.tools.saved_posts.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.saved_posts.get_cache", return_value=cache):
             mock_client = AsyncMock()
             mock_client.get.return_value = _make_response(data=data)
             mock_gc.return_value = mock_client
@@ -512,29 +490,6 @@ class TestGetSavedPosts:
 
         assert len(result) == 1
         assert result[0]["publication"] == ""
-
-    @pytest.mark.asyncio
-    async def test_summarize_fallback_returns_raw_content(self):
-        """When summarizer fails, raw_content is returned instead of summary fields."""
-        from src.tools.saved_posts import get_saved_posts
-        from src.dedup import DedupCache
-
-        cache = DedupCache(":memory:")
-        fallback_result = {"raw_content": "Summarization failed, here is the raw text..."}
-
-        with patch("src.tools.saved_posts.get_client") as mock_gc, \
-             patch("src.tools.saved_posts.get_cache", return_value=cache), \
-             patch("src.tools.saved_posts.run_summarize", new_callable=AsyncMock, return_value=fallback_result):
-            mock_client = AsyncMock()
-            mock_client.get.return_value = _make_response()
-            mock_gc.return_value = mock_client
-
-            result = await get_saved_posts()
-
-        assert len(result) == 2
-        for article in result:
-            assert "raw_content" in article
-            assert "summary" not in article
 
     @pytest.mark.asyncio
     async def test_malformed_content_key_handled(self):
@@ -568,8 +523,7 @@ class TestGetSavedPosts:
         }
 
         with patch("src.tools.saved_posts.get_client") as mock_gc, \
-             patch("src.tools.saved_posts.get_cache", return_value=cache), \
-             patch("src.tools.saved_posts.run_summarize", new_callable=AsyncMock, return_value=MOCK_SUMMARY):
+             patch("src.tools.saved_posts.get_cache", return_value=cache):
             mock_client = AsyncMock()
             mock_client.get.return_value = _make_response(data=data)
             mock_gc.return_value = mock_client

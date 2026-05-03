@@ -5,7 +5,6 @@ import markdownify
 
 from src.dedup import DedupCache
 from src.substack_client import create_client
-from src.summarizer import summarize as run_summarize
 from src.tools.auth import get_cached_user_id
 
 CONTENT_HINT = "Use ss_get_post_content with this URL to read the full article"
@@ -45,7 +44,6 @@ def _parse_article(post: dict) -> dict:
 async def get_likes(
     limit: int = 20,
     since: str | None = None,
-    summarize: bool = True,
 ) -> list | dict:
     client = get_client()
     if client is None:
@@ -169,14 +167,7 @@ async def get_likes(
         if parsed["url"]:
             article["hint"] = CONTENT_HINT
 
-        if post is not None and summarize:
-            summary_result = await run_summarize(content)
-            if "raw_content" in summary_result:
-                article["raw_content"] = summary_result["raw_content"]
-            else:
-                article.update(summary_result)
-        else:
-            article["content"] = content
+        article["content"] = content
 
         articles.append(article)
 
