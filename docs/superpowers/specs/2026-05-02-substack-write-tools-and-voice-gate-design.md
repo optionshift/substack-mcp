@@ -15,11 +15,35 @@ The Substack MCP server (`ss-nav-3950b79a5cc7.fly.dev`) has 19 tools across 6 pr
 
 Substack's API is undocumented but the relevant endpoints are HAR-confirmed via four open-source wrappers (`ma2za/python-substack`, `jakub-k-slys/substack-api`, `06ketan/substack-ops`, `NHagar/substack_api`). A subset of high-value endpoints (scheduled notes, follow/unfollow, DM, pub-subscribe) are not yet captured by any open-source wrapper and require a 5-minute DevTools HAR capture session per endpoint.
 
+## Sprint 7 final scope (after HAR review 2026-05-02)
+
+`may2capture.har` (project root, 230 MB, captured 2026-05-02 16:49 PT) confirms multiple Tier 2 endpoints we'd previously planned to defer. Specifically:
+
+- `POST /api/v1/comment/draft` with optional `trigger_at` ISO timestamp creates either a draft note or a scheduled note (same endpoint, dual purpose).
+- `DELETE /api/v1/comment/{id}` cancels scheduled notes and deletes draft notes.
+- `GET /api/v1/feed/drafts?limit=20` lists all drafts and scheduled notes (filter client-side via `trigger_at`).
+- `POST /api/v1/feed/{user_id}/follow` with body `{surface: "profile"}` follows a user.
+- `DELETE /api/v1/feed/{user_id}/follow` unfollows.
+- `GET /api/v1/feed/following` returns the list of followed user IDs.
+
+DM send and reply-to-note remain unconfirmed. DM is likely websocket-only on Substack's Zync realtime infrastructure. Per Miles, reply is deferred regardless of HAR status. Subscribe/unsubscribe permanently dropped.
+
+**Sprint 7 ships across 5 batches (24 new tools):**
+- **Batch 1** — Foundations (summarizer removal, async dedup, navigator growth playbook update).
+- **Batch 2** — Voice gate primitive.
+- **Batch 3** — 9 Tier 1 writes (publish_note, restack, unrestack, comment_on_post, get_post_comments, get_note_replies, react, delete, upload_image).
+- **Batch 4** — 8 article-drafts + post-scheduling tools (list/get/create/update/delete drafts, publish_draft, schedule_post, unschedule_post).
+- **Batch 5** — 7 newly HAR-confirmed tools (create_note_draft, schedule_note, list_note_drafts, cancel_scheduled_note, follow, unfollow, list_following).
+
+**Sprint 8 candidates (deferred):** ss_reply_to_note (per Miles), ss_send_dm (no HAR, likely websocket transport).
+
+**Permanently out of scope:** ss_subscribe_to_pub / ss_unsubscribe.
+
 ## Goals
 
 - Remove summarizer end-to-end (code, tests, dep, env, docs).
 - Eliminate event-loop blocking by moving sqlite work off the event loop.
-- Add ~24 new write/read tools across three batches: 10 immediate-write tools (publish, reply, restack, comment, react, delete, image, etc.), 8 drafts/scheduling tools (drafts CRUD + schedule a post), and 6 HAR-gated tools (scheduled notes, follow/unfollow, subscribe/unsubscribe, DM).
+- Add 24 new write/read tools across three batches: 9 immediate-write tools (publish, restack, comment, react, delete, image, etc.), 8 article-drafts + post-scheduling tools (drafts CRUD + schedule), 7 note-scheduling + following tools (HAR-confirmed via may2capture.har). DM send and reply_to_note deferred to Sprint 8.
 - Hard voice-enforcement gate at the MCP API layer for every text-posting tool.
 - Bake Substack growth domain knowledge into the START tool (`ss_navigator`).
 - Maintain zero regressions across the existing 240-test suite.
@@ -104,7 +128,7 @@ All tools listed with method + endpoint. Each is registered as `@mcp.tool()` in 
 | Tool | Method | Endpoint | Notes |
 |------|--------|----------|-------|
 | `ss_publish_note(text, attachments=[], force=False)` | POST | `/api/v1/comment/feed` | ProseMirror bodyJson. attachments are link objects (id from upload-attachment step). |
-| `ss_reply_to_note(note_id, text, force=False)` | POST | `/api/v1/comment/feed` | adds `parent_id`. |
+| ~~`ss_reply_to_note`~~ | — | — | DEFERRED to Sprint 8 per Miles 2026-05-02. |
 | `ss_restack(target_id, kind, quote_text=None, force=False)` | POST | `/api/v1/restack/feed` | If `quote_text` provided, post a quote-Note first then restack. `kind`: `"post"` or `"note"`. |
 | `ss_unrestack(target_id, kind)` | DELETE | `/api/v1/restack/feed` | No voice check. |
 | `ss_comment_on_post(post_id, text, parent_id=None, force=False)` | POST | `{pub}/api/v1/post/{post_id}/comment` | Resolve publication subdomain via existing `/posts/by-id/{id}` lookup. |
@@ -129,27 +153,28 @@ All tools listed with method + endpoint. Each is registered as `@mcp.tool()` in 
 
 (Batch 4 lists 8 tools; the spec table groups schedule/unschedule under one batch entry.)
 
-### Batch 5 — Tier 2 HAR-gated tools (4)
+### Batch 5 — Note scheduling + Following (7 tools, all HAR-confirmed via may2capture.har)
 
-Implemented only after HAR capture round confirms each endpoint:
+| Tool | Method | Endpoint | Notes |
+|------|--------|----------|-------|
+| `ss_create_note_draft(text, force=False)` | POST | `/api/v1/comment/draft` | bodyJson + `replyMinimumRole: "everyone"`. No `trigger_at`. Returns draft id + body. Voice-checked. |
+| `ss_schedule_note(text, trigger_at_iso, force=False)` | POST | `/api/v1/comment/draft` | Same body + `trigger_at: "<iso>"`. Voice-checked. Returns draft id. |
+| `ss_list_note_drafts(limit=20)` | GET | `/api/v1/feed/drafts?limit=N` | Returns `{drafts: [...], hasMore, nextCursor}`. Includes both unscheduled drafts and scheduled notes. Filter client-side via `trigger_at != null`. |
+| `ss_cancel_scheduled_note(comment_id)` | DELETE | `/api/v1/comment/{id}` | Cancels schedule or deletes draft. Empty body. Returns `{}`. |
+| `ss_follow(user_id)` | POST | `/api/v1/feed/{user_id}/follow` | Body `{surface: "profile"}`. Returns `{}`. |
+| `ss_unfollow(user_id)` | DELETE | `/api/v1/feed/{user_id}/follow` | Body `{surface: "profile"}`. Returns `{}`. |
+| `ss_list_following()` | GET | `/api/v1/feed/following` | Returns bare JSON array of user_ids. |
 
-| Tool | Method | Endpoint | Status |
-|------|--------|----------|--------|
-| `ss_schedule_note(text, scheduled_for_iso, force=False)` | POST | TBD via HAR (likely `/api/v1/comment/feed` + `publish_at`) | needs HAR |
-| `ss_follow(user_id)` | POST | TBD via HAR (likely `/api/v1/follow/{user_id}`) | needs HAR |
-| `ss_unfollow(user_id)` | DELETE | same | needs HAR |
-| `ss_subscribe_to_pub(pub_id)` | POST | TBD via HAR | needs HAR |
-| `ss_unsubscribe(pub_id)` | DELETE | TBD via HAR | needs HAR |
-| `ss_send_dm(user_id, text, force=False)` | POST | TBD via HAR | needs HAR |
+**Deferred to Sprint 8:** `ss_send_dm` (no HAR; Zync realtime token-only confirms inbound push, send transport unknown).
 
-If HAR for any single tool is infeasible (e.g., websocket-only), that tool drops to a follow-up sprint without blocking the rest of Batch 5.
+**Permanently out of scope:** `ss_subscribe_to_pub` / `ss_unsubscribe`.
 
 ## Test strategy
 
 - Continue TDD per CLAUDE.md sprint protocol. Every tool has a unit test file with mocked httpx responses, dedup interactions, and voice-check coverage where applicable.
 - Voice-check covered by its own ~12-test file plus one regression test per write tool that verifies the gate fires for an em-dash input.
 - Async dedup gets a concurrency test verifying `/health` stays under 1s while a feed call processes 100 items.
-- Target: 240 current → ~340 after sprint. Approximate breakdown: -13 (summarizer removal) + 12 (voice gate) + 50 (Batch 3) + 25 (Batch 4) + 20 (Batch 5) + 3 (concurrency) ≈ +97.
+- Target: 240 current → ~340 after sprint. Approximate breakdown: -13 (summarizer removal) + 12 (voice gate) + 45 (Batch 3) + 25 (Batch 4) + 25 (Batch 5) + 3 (concurrency) ≈ +97.
 
 ## Sprint protocol per CLAUDE.md
 
@@ -174,7 +199,7 @@ Each batch follows: read PRD section → RED tests → CODE → GREEN → checkp
 - [ ] `google-genai` no longer in requirements.
 - [ ] No `summarize` param on any tool. No `summarizer.py` file. `GOOGLE_AI_API_KEY` removed from Fly secrets.
 - [ ] `/health` p99 latency under 1s while a 100-item feed call is in flight (concurrency test).
-- [ ] All 14 new tools registered, deployed, and callable via the live `/mcp` endpoint.
+- [ ] All 24 new tools registered, deployed, and callable via the live `/mcp` endpoint.
 - [ ] Voice gate fires on em-dash test input for every write-with-text tool. `force=True` bypasses.
 - [ ] `ss_navigator` returns the Growth Playbook section.
 - [ ] `docs/SUBSTACK_MCP_REFERENCE.md` updated with all new tools/endpoints/schemas, version bumped, changelog updated.
