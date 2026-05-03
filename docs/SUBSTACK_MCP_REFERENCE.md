@@ -1,4 +1,4 @@
-# Substack MCP Server v1.1 - Complete Reference
+# Substack MCP Server v1.7 - Complete Reference
 
 > **Purpose:** Complete reference documentation for the Substack MCP Server. Designed for LLM consumption to understand all capabilities, tools, and patterns for interacting with Substack's undocumented API.
 
@@ -45,13 +45,13 @@ Optimized for **Option Shift's content engine** — daily ingestion of Substack 
 | Property | Value |
 |----------|-------|
 | Name | ss-navigator |
-| Version | 1.6.0 |
+| Version | 1.7.0 |
 | Protocol | MCP 2025-03-26 |
 | Transport | StreamableHTTP (production) or stdio (local) |
 | Language | Python 3.12+ |
 | Framework | FastMCP (`mcp[server]`) |
-| Tools | 19 (14 read + 4 write + 1 navigator) |
-| Tests | 222 (pytest + pytest-asyncio) |
+| Tools | 28 (14 read + 13 write + 1 navigator) |
+| Tests | 269 (pytest + pytest-asyncio) |
 | Deployment | Fly.io (LAX region) |
 
 ---
@@ -75,7 +75,7 @@ Optimized for **Option Shift's content engine** — daily ingestion of Substack 
 
 ```
 src/
-├── server.py              # MCP server entry point (12 tools, conditional OAuth)
+├── server.py              # MCP server entry point (28 tools, conditional OAuth)
 ├── __main__.py            # uvicorn production entrypoint (0.0.0.0:8080)
 ├── __init__.py
 ├── substack_client.py     # httpx client (cookie auth, 1 req/sec rate limiting)
@@ -122,7 +122,7 @@ SQLite on Fly Volume (`/data/ss_navigator.db`):
 
 ## 3. Tools Reference
 
-The server provides **12 tools** organized into 5 suites.
+The server provides **28 tools** organized into 6 suites.
 
 ### Navigation Suite
 
@@ -562,6 +562,204 @@ Remove an article from saved/bookmarked queue after extracting playbooks.
 
 ---
 
+### Tier 1 Write Suite (v1.7.0)
+
+Voice-gated text-posting tools, restacks, reactions, comments, replies, deletes, and image upload. Tools that send user-authored text (`ss_publish_note`, `ss_restack` with `quote_text`, `ss_comment_on_post`) run text through `src/voice_check.py` first. The check enforces hard bans (em dash, en dash, semicolon, colon-with-label-exception, banned words, AI patterns) and returns `VOICE_VIOLATION` on failure. Pass `force=True` to bypass.
+
+#### 3.16 ss_publish_note — Publish a Note
+
+Publish a short-form Note to your Substack feed. Voice-gated.
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| text | str | Yes | - | Note body text |
+| attachments | list[str] | No | None | Image attachment IDs from `ss_upload_image` |
+| force | bool | No | False | Bypass voice check |
+
+**Endpoint:** `POST /api/v1/comment/feed` with body `{"bodyJson": <prosemirror>, "replyMinimumRole": "everyone", "attachmentIds": [...]}`
+
+**Returns (success):**
+```json
+{"success": true, "id": 214184522, "body": "Note text"}
+```
+
+**Returns (voice violation):**
+```json
+{
+  "error": true,
+  "code": "VOICE_VIOLATION",
+  "violations": [{"rule": "em_dash", "match": "—", "index": 12}],
+  "message": "Voice check failed. Use force=True to bypass.",
+  "retry_after": null
+}
+```
+
+---
+
+#### 3.17 ss_restack — Restack Post or Note (Optional Quote)
+
+Restack a post or note. Optionally include `quote_text` to publish a quote-note alongside the restack — quote text is voice-gated.
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| target_id | str | Yes | - | Numeric post ID or note (comment) ID |
+| kind | str | Yes | - | `post` or `note` |
+| quote_text | str | No | None | Quote-note text (voice-gated) |
+| force | bool | No | False | Bypass voice check on `quote_text` |
+
+**Endpoint:** `POST /api/v1/restack/feed` with body `{"postId": N | null, "commentId": N | null, "tabId": "for-you", "surface": "feed"}`. When `quote_text` is set, server first POSTs the quote note to `/api/v1/comment/feed`, then issues the restack.
+
+**Returns (success):**
+```json
+{"success": true, "target_id": "190215624", "kind": "post", "quoted": false}
+```
+
+---
+
+#### 3.18 ss_unrestack — Remove a Restack
+
+Remove a previously created restack.
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| target_id | str | Yes | - | Numeric post ID or note (comment) ID |
+| kind | str | Yes | - | `post` or `note` |
+
+**Endpoint:** `DELETE /api/v1/restack/feed` with body `{"postId": N | null, "commentId": N | null, "tabId": "for-you", "surface": "feed"}`
+
+**Returns (success):**
+```json
+{"success": true, "target_id": "190215624", "kind": "post", "action": "unrestacked"}
+```
+
+---
+
+#### 3.19 ss_comment_on_post — Comment on a Post
+
+Post a comment (or reply) on an article. Server resolves the publication subdomain via `/api/v1/posts/by-id/{post_id}` because the comment endpoint is subdomain-scoped. Voice-gated.
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| post_id | str | Yes | - | Numeric post ID |
+| text | str | Yes | - | Comment body text |
+| parent_id | str | No | None | Numeric ID of a parent comment to reply to |
+| force | bool | No | False | Bypass voice check |
+
+**Endpoint:** `POST https://{subdomain}.substack.com/api/v1/post/{post_id}/comment` with body `{"body": text, "parent_id": N?}`
+
+**Returns (success):**
+```json
+{"success": true, "id": 99887766, "body": "Comment text"}
+```
+
+---
+
+#### 3.20 ss_get_post_comments — List Post Comments
+
+Fetch comments on an article (subdomain-scoped). Defaults to `best_first` ordering.
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| post_id | str | Yes | - | Numeric post ID |
+| sort | str | No | `best_first` | Sort order (`best_first`, `newest_first`, etc.) |
+
+**Endpoint:** `GET https://{subdomain}.substack.com/api/v1/post/{post_id}/comments?all_comments=true&sort={sort}`
+
+**Returns:** Raw API response (passthrough). Typical shape includes a `comments` array with `id`, `body`, `name`, `handle`, `created_at`, and nested `children`.
+
+---
+
+#### 3.21 ss_get_note_replies — List Note Replies
+
+Fetch the reply thread under a Note.
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| note_id | str | Yes | - | Numeric note (comment) ID |
+| cursor | str | No | None | Pagination cursor |
+
+**Endpoint:** `GET /api/v1/reader/comment/{note_id}/replies?cursor={cursor}`
+
+**Returns:** Raw API response (passthrough) — typically `{"items": [...], "next_cursor": "..."}`.
+
+---
+
+#### 3.22 ss_react — Emoji Reaction (Generalized Like)
+
+Generalized reaction on a post or note. `ss_like` is preserved as a hardcoded ❤ alias; `ss_react` accepts any emoji.
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| target_id | str | Yes | - | Numeric post ID or note (comment) ID |
+| kind | str | Yes | - | `post` or `note` |
+| emoji | str | No | `❤` | Reaction emoji |
+
+**Endpoints:**
+| kind | Endpoint | Body |
+|------|----------|------|
+| post | `POST /api/v1/post/{target_id}/reaction` | `{"reaction": emoji, "surface": "reader", "tabId": "for-you"}` |
+| note | `POST /api/v1/comment/{target_id}/reaction` | `{"publication_id": null, "reaction": emoji, "tabId": "for-you"}` |
+
+**Returns (success):**
+```json
+{"success": true, "target_id": "190215624", "kind": "post", "emoji": "🔥"}
+```
+
+---
+
+#### 3.23 ss_delete — Delete Note or Post Comment
+
+Delete a note (top-level Note) or a post comment. Note deletes hit `/api/v1/comment/{id}` directly; post-comment deletes are subdomain-scoped and require `post_id` to resolve the publication.
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| target_id | str | Yes | - | Numeric note ID or comment ID |
+| kind | str | Yes | - | `note` or `post_comment` |
+| post_id | str | No (yes if `kind=post_comment`) | None | Post ID for subdomain resolution |
+
+**Endpoints:**
+| kind | Endpoint |
+|------|----------|
+| note | `DELETE /api/v1/comment/{target_id}` |
+| post_comment | `DELETE https://{subdomain}.substack.com/api/v1/comment/{target_id}` |
+
+**Returns (success):**
+```json
+{"success": true, "target_id": "214184522", "kind": "note", "action": "deleted"}
+```
+
+---
+
+#### 3.24 ss_upload_image — Upload Image for Note Attachments
+
+Upload an image and receive the hosted URL. Use the returned URL/ID with `ss_publish_note(attachments=[...])`.
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| image_data | str | Yes | - | Data URI: `data:image/jpeg;base64,...` (or png, gif) |
+
+**Endpoint:** `POST /api/v1/image` with body `{"image": "<data-uri>"}`
+
+**Returns (success):**
+```json
+{
+  "success": true,
+  "url": "https://substackcdn.com/image/fetch/...",
+  "raw": {"url": "...", "id": "..."}
+}
+```
+
+---
+
 ## 4. Business Logic & Constants
 
 ### 4.1 Dedup Logic
@@ -798,13 +996,22 @@ ss_get_subscriptions    — List followed publications
 ss_search_posts         — Search articles by keyword (time/scope filters)
 ss_search_publications  — Search publications/newsletters
 ss_get_activity_feed    — Who engaged with your content
-ss_like                 — Like/heart a post or note
+ss_like                 — Like/heart a post or note (❤ alias of ss_react)
 ss_mark_seen            — Mark post/note as seen/read in feed
 ss_get_my_posts         — List your own published posts
 ss_search_trending      — Trending articles by recency + engagement
 ss_get_saved_posts      — Saved/bookmarked articles (saved/seen/paid filters)
 ss_save_post            — Bookmark an article for later
 ss_unsave_post          — Remove from saved queue after processing
+ss_publish_note         — Publish a Note (voice-gated)
+ss_restack              — Restack post/note (optional voice-gated quote)
+ss_unrestack            — Remove a restack
+ss_comment_on_post      — Comment on an article (voice-gated)
+ss_get_post_comments    — List post comments (subdomain-scoped)
+ss_get_note_replies     — List replies under a note
+ss_react                — Generalized emoji reaction
+ss_delete               — Delete a note or post comment
+ss_upload_image         — Upload image (returns URL for note attachments)
 ```
 
 ### API Endpoints (All HAR-Verified)
@@ -821,12 +1028,22 @@ GET  /api/v1/publication/search?query={q}                   Publication search
 GET  {sub}.substack.com/api/v1/post_management/published    My published posts
 POST /api/v1/reader/feed/{p|c}-{id}/seen                    Mark as seen
 GET  /api/v1/activity-feed-web?filter={filter}              Activity feed
-POST /api/v1/post/{id}/reaction                             Like article
-POST /api/v1/comment/{id}/reaction                          Like note
+POST /api/v1/post/{id}/reaction                             React on article (❤ or any emoji)
+POST /api/v1/comment/{id}/reaction                          React on note (❤ or any emoji)
 POST /api/v1/activity/unread                                Mark as read
 GET  /api/v1/reader/posts?inboxType={saved|seen|paid}       Saved/reading list
 POST /api/v1/posts/saved                                    Save/bookmark article
 DEL  /api/v1/posts/saved                                    Unsave/unbookmark
+POST /api/v1/comment/feed                                   Publish note (prosemirror body)
+POST /api/v1/restack/feed                                   Restack post/note
+DEL  /api/v1/restack/feed                                   Unrestack post/note
+GET  /api/v1/posts/by-id/{post_id}                          Resolve publication subdomain
+POST {sub}.substack.com/api/v1/post/{id}/comment            Comment on a post
+GET  {sub}.substack.com/api/v1/post/{id}/comments           List post comments
+GET  /api/v1/reader/comment/{note_id}/replies               List note replies
+DEL  /api/v1/comment/{id}                                   Delete a note
+DEL  {sub}.substack.com/api/v1/comment/{id}                 Delete a post comment
+POST /api/v1/image                                          Upload image (data URI in)
 ```
 
 ### Feed Response Format
@@ -846,11 +1063,12 @@ Validate:   ss_auth_check (caches user_id)
 
 ---
 
-*Document Version: 1.6.0*
+*Document Version: 1.7.0*
 *Last Updated: May 2, 2026*
-*Compatible with: Substack MCP Server v1.6*
+*Compatible with: Substack MCP Server v1.7*
 
 ### Changelog
+- **1.7.0** (2026-05-02): Sprint 7 Batch 3 — 9 Tier 1 write tools (publish_note, restack, unrestack, comment_on_post, get_post_comments, get_note_replies, react, delete, upload_image). Voice gate enforced via src/voice_check.py.
 - **1.6.0** (2026-05-02): Removed summarizer (Sprint 7 Batch 1). Dropped `google-genai` dependency, removed `summarize` param from all read tools. Feed tools now always return full markdown via `content` field. 19 tools total, 222 tests.
 - **1.5.0**: Saved Posts & Playbook Pipeline. Added `ss_get_saved_posts` (reading list with inbox_type filters: saved/seen/paid, server-side joins of posts+publications+savedPosts+inboxItems, read_progress tracking), `ss_save_post` (bookmark articles), `ss_unsave_post` (remove from queue after processing). Added `delete()` to SubstackClient. 2 new workflows (Saved Posts → Playbook, Morning Engagement Check). 19 tools total, 235 tests.
 - **1.4.0**: Added `ss_search_trending` (trending articles with recency/engagement scores), `ss_get_my_posts` (creator's published posts, subdomain-scoped), `ss_mark_seen` (mark feed items as read). 16 tools total, 200 tests.

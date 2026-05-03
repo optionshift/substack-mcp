@@ -443,3 +443,14 @@ MCP server blocked Perplexity/Claude from deep research: full article content ne
 - ss_navigator growth playbook added (+1 test)
 - Deployed to Fly, verified live, GOOGLE_AI_API_KEY secret removed
 - Test count: ~224
+
+### Batch 2: Voice gate — DONE 2026-05-02
+- src/voice_check.py + 14 tests
+- Hard-ban regex (em dash, en dash, semicolon, colon-with-label-exception, banned words, AI patterns)
+- Force override via force=True
+
+### Batch 3: Tier 1 writes — DONE 2026-05-02
+- 9 tools, 31 new tests
+- Test count: 269
+- Voice gate enforced on all text-posting tools
+- Live at https://ss-nav-3950b79a5cc7.fly.dev/mcp
