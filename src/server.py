@@ -19,6 +19,7 @@ from src.tools.drafts import (
     unschedule_post,
     update_draft,
 )
+from src.tools.follow import follow_user, list_following, unfollow_user
 from src.tools.like import like_content
 from src.tools.fyp_feed import get_fyp_feed
 from src.tools.navigator import get_navigator
@@ -384,6 +385,24 @@ async def ss_list_note_drafts(limit: int = 20) -> dict:
 async def ss_cancel_scheduled_note(comment_id: str) -> dict:
     """Cancel a scheduled Note (or delete a Note draft). Params: comment_id."""
     return await cancel_scheduled_note(comment_id=comment_id)
+
+
+@mcp.tool()
+async def ss_follow(user_id: str) -> dict:
+    """Follow a Substack user. Params: user_id."""
+    return await follow_user(user_id=user_id)
+
+
+@mcp.tool()
+async def ss_unfollow(user_id: str) -> dict:
+    """Unfollow a Substack user. Params: user_id."""
+    return await unfollow_user(user_id=user_id)
+
+
+@mcp.tool()
+async def ss_list_following() -> dict:
+    """List user_ids you follow."""
+    return await list_following()
 
 
 # -- Health & transport --
