@@ -21,6 +21,7 @@ from src.tools.search_posts import search_posts
 from src.tools.search_trending import search_trending
 from src.tools.subscription_feed import get_subscription_feed
 from src.tools.publish_note import publish_note
+from src.tools.restack import restack_content, unrestack_content
 from src.tools.save_post import save_post, unsave_post
 from src.tools.saved_posts import get_saved_posts
 from src.tools.subscriptions import get_subscriptions
@@ -235,6 +236,19 @@ async def ss_publish_note(text: str, attachments: list[str] | None = None, force
     """Publish a Note immediately. Voice-checked. Use force=True to bypass voice check.
     Params: text (required), attachments (optional list of attachment IDs from ss_upload_image), force (default False)."""
     return await publish_note(text=text, attachments=attachments, force=force)
+
+
+@mcp.tool()
+async def ss_restack(target_id: str, kind: str, quote_text: str | None = None, force: bool = False) -> dict:
+    """Restack a post or note, optionally with a quote-comment Note. Voice-checked when quote_text provided.
+    Params: target_id, kind ('post' or 'note'), quote_text (optional), force (bypass voice check)."""
+    return await restack_content(target_id=target_id, kind=kind, quote_text=quote_text, force=force)
+
+
+@mcp.tool()
+async def ss_unrestack(target_id: str, kind: str) -> dict:
+    """Remove a restack. Params: target_id, kind ('post' or 'note')."""
+    return await unrestack_content(target_id=target_id, kind=kind)
 
 
 # -- Health & transport --
