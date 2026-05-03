@@ -20,6 +20,7 @@ from src.tools.search import search_publications
 from src.tools.search_posts import search_posts
 from src.tools.search_trending import search_trending
 from src.tools.subscription_feed import get_subscription_feed
+from src.tools.publish_note import publish_note
 from src.tools.save_post import save_post, unsave_post
 from src.tools.saved_posts import get_saved_posts
 from src.tools.subscriptions import get_subscriptions
@@ -227,6 +228,13 @@ async def ss_unsave_post(post_id: str) -> dict:
 async def ss_like(id: str, type: str) -> dict:
     """Like/heart an article or note. type: 'post' or 'note'."""
     return await like_content(id=id, type=type)
+
+
+@mcp.tool()
+async def ss_publish_note(text: str, attachments: list[str] | None = None, force: bool = False) -> dict:
+    """Publish a Note immediately. Voice-checked. Use force=True to bypass voice check.
+    Params: text (required), attachments (optional list of attachment IDs from ss_upload_image), force (default False)."""
+    return await publish_note(text=text, attachments=attachments, force=force)
 
 
 # -- Health & transport --
