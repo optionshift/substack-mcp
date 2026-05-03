@@ -1,7 +1,20 @@
 # Progress Log: substack-mcp
 
-## Status: Sprint 6 APPROVED
-**Last Updated:** 2026-03-17
+## Status: Sprint 7 Batch 4 — DONE
+**Last Updated:** 2026-05-02
+
+---
+
+## Sprint 7 — Substack Writes + Voice Gate (May 2026)
+
+### Batch 4: Article drafts + post scheduling — DONE 2026-05-02
+- 8 tools, ~23 new tests
+- Test count: 292 (up from 269)
+- Live at https://ss-nav-3950b79a5cc7.fly.dev/mcp
+- New: ss_list_drafts, ss_get_draft, ss_delete_draft, ss_create_draft, ss_update_draft, ss_publish_draft, ss_schedule_post, ss_unschedule_post
+- Helper: src/tools/auth.py exposes `get_my_publication_subdomain()` and `auth_check()` now returns `publications`
+- Voice gate on create_draft + update_draft (force=True bypass)
+- Subdomain-scoped at `https://{publication}.substack.com/api/v1/drafts...`
 
 ---
 

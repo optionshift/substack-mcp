@@ -1,4 +1,4 @@
-# Substack MCP Server v1.7 - Complete Reference
+# Substack MCP Server v1.8 - Complete Reference
 
 > **Purpose:** Complete reference documentation for the Substack MCP Server. Designed for LLM consumption to understand all capabilities, tools, and patterns for interacting with Substack's undocumented API.
 
@@ -45,13 +45,13 @@ Optimized for **Option Shift's content engine** — daily ingestion of Substack 
 | Property | Value |
 |----------|-------|
 | Name | ss-navigator |
-| Version | 1.7.0 |
+| Version | 1.8.0 |
 | Protocol | MCP 2025-03-26 |
 | Transport | StreamableHTTP (production) or stdio (local) |
 | Language | Python 3.12+ |
 | Framework | FastMCP (`mcp[server]`) |
-| Tools | 28 (14 read + 13 write + 1 navigator) |
-| Tests | 269 (pytest + pytest-asyncio) |
+| Tools | 36 (14 read + 21 write + 1 navigator) |
+| Tests | 292 (pytest + pytest-asyncio) |
 | Deployment | Fly.io (LAX region) |
 
 ---
@@ -760,6 +760,173 @@ Upload an image and receive the hosted URL. Use the returned URL/ID with `ss_pub
 
 ---
 
+### Article Drafts + Scheduling Suite (v1.8.0)
+
+CRUD for article drafts, plus publish-now and schedule/unschedule. All endpoints are subdomain-scoped (`https://{publication}.substack.com`); the server resolves the user's primary publication subdomain via `ss_auth_check` (`publications[0].subdomain`). Tools that accept user-authored text (`ss_create_draft`, `ss_update_draft` when string fields change) are voice-gated via `src/voice_check.py` with `force=True` bypass.
+
+#### 3.25 ss_list_drafts — List Article Drafts
+
+List your article drafts.
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| limit | int | No | 20 | Max drafts to return |
+| offset | int | No | 0 | Pagination offset |
+
+**Endpoint:** `GET https://{publication}.substack.com/api/v1/drafts?limit={N}&offset={N}`
+
+**Returns:** Raw API response. Typical shape: `{"drafts": [{"id": N, "title": "...", ...}], "hasMore": false}`.
+
+---
+
+#### 3.26 ss_get_draft — Fetch a Single Draft
+
+Fetch a single article draft by id.
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| draft_id | str | Yes | - | Numeric draft ID |
+
+**Endpoint:** `GET https://{publication}.substack.com/api/v1/drafts/{draft_id}`
+
+**Returns:** Raw API response (passthrough). Includes `id`, `draft_title`, `draft_subtitle`, `draft_body` (ProseMirror), and other fields.
+
+---
+
+#### 3.27 ss_delete_draft — Delete a Draft
+
+Delete an article draft.
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| draft_id | str | Yes | - | Numeric draft ID |
+
+**Endpoint:** `DELETE https://{publication}.substack.com/api/v1/drafts/{draft_id}`
+
+**Returns (success):**
+```json
+{"success": true, "draft_id": "42", "action": "deleted"}
+```
+
+---
+
+#### 3.28 ss_create_draft — Create an Article Draft
+
+Create an article draft. Title, body, and subtitle are voice-checked.
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| title | str | Yes | - | Draft title |
+| body_markdown | str | Yes | - | Draft body in markdown (paragraph-only ProseMirror conversion) |
+| subtitle | str | No | None | Draft subtitle |
+| force | bool | No | False | Bypass voice check |
+
+**Endpoint:** `POST https://{publication}.substack.com/api/v1/drafts` with body `{"draft_title": title, "draft_subtitle": subtitle?, "draft_body": <prosemirror>}`
+
+**Returns (success):**
+```json
+{"success": true, "id": 99, "raw": {...}}
+```
+
+**Returns (voice violation):**
+```json
+{
+  "error": true,
+  "code": "VOICE_VIOLATION",
+  "violations": [...],
+  "message": "Voice check failed. Use force=True to bypass.",
+  "retry_after": null
+}
+```
+
+---
+
+#### 3.29 ss_update_draft — Update a Draft
+
+Update fields on an existing article draft. Voice-checked when string fields change (set `force=True` to bypass).
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| draft_id | str | Yes | - | Numeric draft ID |
+| fields | dict | Yes | - | Allowed keys: `title`, `subtitle`, `slug`, `search_engine_title`, `search_engine_description`, `draft_section_id`, `body_markdown` |
+| force | bool | No | False | Bypass voice check |
+
+**Endpoint:** `PUT https://{publication}.substack.com/api/v1/drafts/{draft_id}` with body containing the corresponding API field names (`draft_title`, `draft_subtitle`, `draft_body`, etc.).
+
+**Returns (success):**
+```json
+{"success": true, "draft_id": "42", "raw": {...}}
+```
+
+**Returns (validation error on unsupported field):**
+```json
+{"error": true, "code": "VALIDATION", "message": "unsupported fields: ['unknown_field']", "retry_after": null}
+```
+
+---
+
+#### 3.30 ss_publish_draft — Publish a Draft Now
+
+Publish an article draft immediately.
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| draft_id | str | Yes | - | Numeric draft ID |
+| send | bool | No | True | Email subscribers when publishing |
+| share_automatically | bool | No | False | Auto-share to social platforms |
+
+**Endpoint:** `POST https://{publication}.substack.com/api/v1/drafts/{draft_id}/publish` with body `{"send": bool, "share_automatically": bool}`
+
+**Returns (success):**
+```json
+{"success": true, "draft_id": "42", "raw": {...}}
+```
+
+---
+
+#### 3.31 ss_schedule_post — Schedule a Draft for Future Publish
+
+Schedule an article draft for a future date (UTC ISO 8601).
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| draft_id | str | Yes | - | Numeric draft ID |
+| post_date_iso | str | Yes | - | Future publish date in ISO 8601 UTC (e.g., `2026-06-01T15:00:00Z`) |
+
+**Endpoint:** `POST https://{publication}.substack.com/api/v1/drafts/{draft_id}/schedule` with body `{"post_date": post_date_iso}`
+
+**Returns (success):**
+```json
+{"success": true, "draft_id": "42", "scheduled_for": "2026-06-01T15:00:00Z"}
+```
+
+---
+
+#### 3.32 ss_unschedule_post — Cancel a Scheduled Publish
+
+Cancel a previously scheduled article publish.
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| draft_id | str | Yes | - | Numeric draft ID |
+
+**Endpoint:** `POST https://{publication}.substack.com/api/v1/drafts/{draft_id}/schedule` with body `{"post_date": null}`
+
+**Returns (success):**
+```json
+{"success": true, "draft_id": "42", "action": "unscheduled"}
+```
+
+---
+
 ## 4. Business Logic & Constants
 
 ### 4.1 Dedup Logic
@@ -1012,6 +1179,14 @@ ss_get_note_replies     — List replies under a note
 ss_react                — Generalized emoji reaction
 ss_delete               — Delete a note or post comment
 ss_upload_image         — Upload image (returns URL for note attachments)
+ss_list_drafts          — List your article drafts
+ss_get_draft            — Fetch a single article draft
+ss_delete_draft         — Delete an article draft
+ss_create_draft         — Create an article draft (voice-gated)
+ss_update_draft         — Update fields on a draft (voice-gated)
+ss_publish_draft        — Publish a draft now
+ss_schedule_post        — Schedule a draft for a future date
+ss_unschedule_post      — Cancel a scheduled article publish
 ```
 
 ### API Endpoints (All HAR-Verified)
@@ -1044,6 +1219,13 @@ GET  /api/v1/reader/comment/{note_id}/replies               List note replies
 DEL  /api/v1/comment/{id}                                   Delete a note
 DEL  {sub}.substack.com/api/v1/comment/{id}                 Delete a post comment
 POST /api/v1/image                                          Upload image (data URI in)
+GET  {sub}.substack.com/api/v1/drafts                       List article drafts
+GET  {sub}.substack.com/api/v1/drafts/{draft_id}            Get article draft by id
+PUT  {sub}.substack.com/api/v1/drafts/{draft_id}            Update article draft
+DEL  {sub}.substack.com/api/v1/drafts/{draft_id}            Delete article draft
+POST {sub}.substack.com/api/v1/drafts                       Create article draft
+POST {sub}.substack.com/api/v1/drafts/{id}/publish          Publish draft now
+POST {sub}.substack.com/api/v1/drafts/{id}/schedule         Schedule (or unschedule with post_date=null)
 ```
 
 ### Feed Response Format
@@ -1063,11 +1245,12 @@ Validate:   ss_auth_check (caches user_id)
 
 ---
 
-*Document Version: 1.7.0*
+*Document Version: 1.8.0*
 *Last Updated: May 2, 2026*
-*Compatible with: Substack MCP Server v1.7*
+*Compatible with: Substack MCP Server v1.8*
 
 ### Changelog
+- **1.8.0** (2026-05-02): Sprint 7 Batch 4 — 8 article drafts + post scheduling tools (ss_list_drafts, ss_get_draft, ss_delete_draft, ss_create_draft, ss_update_draft, ss_publish_draft, ss_schedule_post, ss_unschedule_post). Subdomain-scoped via `auth.get_my_publication_subdomain()`. Voice gate on create/update.
 - **1.7.0** (2026-05-02): Sprint 7 Batch 3 — 9 Tier 1 write tools (publish_note, restack, unrestack, comment_on_post, get_post_comments, get_note_replies, react, delete, upload_image). Voice gate enforced via src/voice_check.py.
 - **1.6.0** (2026-05-02): Removed summarizer (Sprint 7 Batch 1). Dropped `google-genai` dependency, removed `summarize` param from all read tools. Feed tools now always return full markdown via `content` field. 19 tools total, 222 tests.
 - **1.5.0**: Saved Posts & Playbook Pipeline. Added `ss_get_saved_posts` (reading list with inbox_type filters: saved/seen/paid, server-side joins of posts+publications+savedPosts+inboxItems, read_progress tracking), `ss_save_post` (bookmark articles), `ss_unsave_post` (remove from queue after processing). Added `delete()` to SubstackClient. 2 new workflows (Saved Posts → Playbook, Morning Engagement Check). 19 tools total, 235 tests.
