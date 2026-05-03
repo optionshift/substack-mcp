@@ -12,6 +12,7 @@ from src.tools.like import like_content
 from src.tools.fyp_feed import get_fyp_feed
 from src.tools.navigator import get_navigator
 from src.tools.likes import get_likes
+from src.tools.note_replies import get_note_replies
 from src.tools.notes_feed import get_notes_feed
 from src.tools.post_content import get_post_content
 from src.tools.restacks import get_restacks
@@ -263,6 +264,12 @@ async def ss_comment_on_post(post_id: str, text: str, parent_id: str | None = No
 async def ss_get_post_comments(post_id: str, sort: str = "best_first") -> dict:
     """Get the comment tree on a Substack article. Params: post_id, sort ('best_first' default)."""
     return await get_post_comments(post_id=post_id, sort=sort)
+
+
+@mcp.tool()
+async def ss_get_note_replies(note_id: str, cursor: str | None = None) -> dict:
+    """Get replies on a Note thread. Params: note_id, cursor (for pagination)."""
+    return await get_note_replies(note_id=note_id, cursor=cursor)
 
 
 # -- Health & transport --
