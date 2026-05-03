@@ -116,6 +116,142 @@ class TestGetDraft:
         assert result["code"] == "UNKNOWN"
 
 
+class TestCreateDraft:
+    @pytest.mark.asyncio
+    async def test_create_voice_blocks(self):
+        from src.tools.drafts import create_draft
+
+        result = await create_draft(title="ok", body_markdown="we leverage synergy")
+        assert result["error"] is True
+        assert result["code"] == "VOICE_VIOLATION"
+
+    @pytest.mark.asyncio
+    async def test_create_force_bypasses(self):
+        from src.tools.drafts import create_draft
+
+        with patch("src.tools.drafts.get_client") as mock_gc, \
+             patch("src.tools.drafts.get_my_publication_subdomain", new=AsyncMock(return_value="lenny")):
+            mock_client = AsyncMock()
+            mock_client.get_cookies.return_value = {"substack.sid": "abc"}
+            mock_gc.return_value = mock_client
+
+            with patch("src.tools.drafts.httpx.AsyncClient") as mock_http_cls:
+                mock_http = AsyncMock()
+                mock_http.request.return_value = _make_response(
+                    data={"id": 99}, method="POST"
+                )
+                mock_http_cls.return_value.__aenter__.return_value = mock_http
+
+                result = await create_draft(
+                    title="t", body_markdown="we leverage", force=True,
+                )
+        assert result["success"] is True
+        assert result["id"] == 99
+
+    @pytest.mark.asyncio
+    async def test_create_clean_text_succeeds(self):
+        from src.tools.drafts import create_draft
+
+        with patch("src.tools.drafts.get_client") as mock_gc, \
+             patch("src.tools.drafts.get_my_publication_subdomain", new=AsyncMock(return_value="lenny")):
+            mock_client = AsyncMock()
+            mock_client.get_cookies.return_value = {"substack.sid": "abc"}
+            mock_gc.return_value = mock_client
+
+            with patch("src.tools.drafts.httpx.AsyncClient") as mock_http_cls:
+                mock_http = AsyncMock()
+                mock_http.request.return_value = _make_response(
+                    data={"id": 7}, method="POST"
+                )
+                mock_http_cls.return_value.__aenter__.return_value = mock_http
+
+                result = await create_draft(
+                    title="hello world",
+                    body_markdown="first paragraph.\n\nsecond paragraph.",
+                    subtitle="a clean subtitle",
+                )
+
+        assert result["success"] is True
+        assert result["id"] == 7
+
+    @pytest.mark.asyncio
+    async def test_create_voice_checks_subtitle(self):
+        from src.tools.drafts import create_draft
+
+        result = await create_draft(
+            title="ok",
+            body_markdown="clean body",
+            subtitle="we leverage synergy",
+        )
+        assert result["error"] is True
+        assert result["code"] == "VOICE_VIOLATION"
+
+
+class TestUpdateDraft:
+    @pytest.mark.asyncio
+    async def test_update_title_only(self):
+        from src.tools.drafts import update_draft
+
+        with patch("src.tools.drafts.get_client") as mock_gc, \
+             patch("src.tools.drafts.get_my_publication_subdomain", new=AsyncMock(return_value="lenny")):
+            mock_client = AsyncMock()
+            mock_client.get_cookies.return_value = {"substack.sid": "abc"}
+            mock_gc.return_value = mock_client
+
+            with patch("src.tools.drafts.httpx.AsyncClient") as mock_http_cls:
+                mock_http = AsyncMock()
+                mock_http.request.return_value = _make_response(method="PUT")
+                mock_http_cls.return_value.__aenter__.return_value = mock_http
+
+                result = await update_draft(draft_id="42", fields={"title": "new"})
+        assert result["success"] is True
+
+    @pytest.mark.asyncio
+    async def test_update_body_voice_blocks(self):
+        from src.tools.drafts import update_draft
+
+        result = await update_draft(
+            draft_id="42",
+            fields={"body_markdown": "we leverage synergy"},
+        )
+        assert result["error"] is True
+        assert result["code"] == "VOICE_VIOLATION"
+
+    @pytest.mark.asyncio
+    async def test_update_unsupported_field(self):
+        from src.tools.drafts import update_draft
+
+        result = await update_draft(
+            draft_id="42",
+            fields={"some_random_field": "x"},
+        )
+        assert result["error"] is True
+        assert result["code"] == "VALIDATION"
+
+    @pytest.mark.asyncio
+    async def test_update_body_force_bypasses(self):
+        from src.tools.drafts import update_draft
+
+        with patch("src.tools.drafts.get_client") as mock_gc, \
+             patch("src.tools.drafts.get_my_publication_subdomain", new=AsyncMock(return_value="lenny")):
+            mock_client = AsyncMock()
+            mock_client.get_cookies.return_value = {"substack.sid": "abc"}
+            mock_gc.return_value = mock_client
+
+            with patch("src.tools.drafts.httpx.AsyncClient") as mock_http_cls:
+                mock_http = AsyncMock()
+                mock_http.request.return_value = _make_response(method="PUT")
+                mock_http_cls.return_value.__aenter__.return_value = mock_http
+
+                result = await update_draft(
+                    draft_id="42",
+                    fields={"body_markdown": "we leverage"},
+                    force=True,
+                )
+        assert result["success"] is True
+        assert result["draft_id"] == "42"
+
+
 class TestDeleteDraft:
     @pytest.mark.asyncio
     async def test_delete_success(self):

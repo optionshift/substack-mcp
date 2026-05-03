@@ -87,3 +87,106 @@ async def delete_draft(draft_id: str) -> dict:
     if err:
         return err
     return {"success": True, "draft_id": draft_id, "action": "deleted"}
+
+
+def _md_to_prosemirror(md: str) -> dict:
+    """Minimal markdown-to-ProseMirror converter. For now, paragraph-only."""
+    paragraphs = [p.strip() for p in (md or "").split("\n\n") if p.strip()]
+    return {
+        "type": "doc",
+        "attrs": {"schemaVersion": "v1"},
+        "content": [
+            {"type": "paragraph", "content": [{"type": "text", "text": p}]}
+            for p in paragraphs
+        ],
+    }
+
+
+async def create_draft(
+    title: str,
+    body_markdown: str,
+    subtitle: str | None = None,
+    force: bool = False,
+) -> dict:
+    if not force:
+        violations = (
+            voice_check(body_markdown)
+            + voice_check(title)
+            + (voice_check(subtitle) if subtitle else [])
+        )
+        if violations:
+            return {"error": True, "code": "VOICE_VIOLATION",
+                    "violations": [v.to_dict() for v in violations],
+                    "message": "Voice check failed. Use force=True to bypass.",
+                    "retry_after": None}
+
+    sub, err = await _resolve_pub()
+    if err:
+        return err
+
+    body = {
+        "draft_title": title,
+        "draft_body": _md_to_prosemirror(body_markdown),
+    }
+    if subtitle:
+        body["draft_subtitle"] = subtitle
+
+    url = f"https://{sub}.substack.com/api/v1/drafts"
+    resp, err = await _http_request("POST", url, json=body)
+    if err:
+        return err
+    err = _check_status(resp)
+    if err:
+        return err
+    data = resp.json()
+    return {"success": True, "id": data.get("id"), "raw": data}
+
+
+ALLOWED_UPDATE_FIELDS = {
+    "title", "subtitle", "slug", "search_engine_title", "search_engine_description",
+    "draft_section_id", "body_markdown",
+}
+
+
+async def update_draft(draft_id: str, fields: dict, force: bool = False) -> dict:
+    bad = set(fields.keys()) - ALLOWED_UPDATE_FIELDS
+    if bad:
+        return {"error": True, "code": "VALIDATION",
+                "message": f"unsupported fields: {sorted(bad)}",
+                "retry_after": None}
+
+    if not force:
+        text_to_check = " ".join(
+            [str(v) for k, v in fields.items() if isinstance(v, str)]
+        )
+        if text_to_check.strip():
+            violations = voice_check(text_to_check)
+            if violations:
+                return {"error": True, "code": "VOICE_VIOLATION",
+                        "violations": [v.to_dict() for v in violations],
+                        "message": "Voice check failed. Use force=True to bypass.",
+                        "retry_after": None}
+
+    sub, err = await _resolve_pub()
+    if err:
+        return err
+
+    body: dict = {}
+    for k, v in fields.items():
+        if k == "body_markdown":
+            body["draft_body"] = _md_to_prosemirror(v)
+        elif k == "title":
+            body["draft_title"] = v
+        elif k == "subtitle":
+            body["draft_subtitle"] = v
+        else:
+            body[k] = v
+
+    url = f"https://{sub}.substack.com/api/v1/drafts/{draft_id}"
+    resp, err = await _http_request("PUT", url, json=body)
+    if err:
+        return err
+    err = _check_status(resp)
+    if err:
+        return err
+    return {"success": True, "draft_id": draft_id, "raw": resp.json()}

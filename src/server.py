@@ -9,7 +9,13 @@ from src.tools.auth import auth_check
 from src.tools.activity_feed import get_activity_feed
 from src.tools.comment_on_post import comment_on_post, get_post_comments
 from src.tools.delete_content import delete_content
-from src.tools.drafts import delete_draft, get_draft, list_drafts
+from src.tools.drafts import (
+    create_draft,
+    delete_draft,
+    get_draft,
+    list_drafts,
+    update_draft,
+)
 from src.tools.like import like_content
 from src.tools.fyp_feed import get_fyp_feed
 from src.tools.navigator import get_navigator
@@ -313,6 +319,19 @@ async def ss_get_draft(draft_id: str) -> dict:
 async def ss_delete_draft(draft_id: str) -> dict:
     """Delete an article draft."""
     return await delete_draft(draft_id=draft_id)
+
+
+@mcp.tool()
+async def ss_create_draft(title: str, body_markdown: str, subtitle: str | None = None, force: bool = False) -> dict:
+    """Create an article draft. Voice-checked. Params: title, body_markdown, subtitle (optional), force."""
+    return await create_draft(title=title, body_markdown=body_markdown, subtitle=subtitle, force=force)
+
+
+@mcp.tool()
+async def ss_update_draft(draft_id: str, fields: dict, force: bool = False) -> dict:
+    """Update fields on an existing article draft. Voice-checked when string fields change.
+    Params: draft_id, fields (dict of allowed fields), force."""
+    return await update_draft(draft_id=draft_id, fields=fields, force=force)
 
 
 # -- Health & transport --
