@@ -1,11 +1,20 @@
 # Progress Log: substack-mcp
 
-## Status: Sprint 7 Batch 4 — DONE
+## Status: Sprint 7 Batch 5 — DONE
 **Last Updated:** 2026-05-02
 
 ---
 
 ## Sprint 7 — Substack Writes + Voice Gate (May 2026)
+
+### Batch 5: Note drafts + scheduling + follow — DONE 2026-05-02
+- 7 tools, ~22 new tests
+- All HAR-confirmed via may2capture.har
+- Test count: 314
+- Live at https://ss-nav-3950b79a5cc7.fly.dev/mcp
+- Sprint 7 ships 24 new tools total (28 → 43 active tools)
+- New: ss_create_note_draft, ss_schedule_note, ss_list_note_drafts, ss_cancel_scheduled_note, ss_follow, ss_unfollow, ss_list_following
+- Voice gate on create_note_draft + schedule_note (force=True bypass)
 
 ### Batch 4: Article drafts + post scheduling — DONE 2026-05-02
 - 8 tools, ~23 new tests

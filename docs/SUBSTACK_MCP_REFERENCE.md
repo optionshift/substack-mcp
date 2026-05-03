@@ -1,4 +1,4 @@
-# Substack MCP Server v1.8 - Complete Reference
+# Substack MCP Server v1.9 - Complete Reference
 
 > **Purpose:** Complete reference documentation for the Substack MCP Server. Designed for LLM consumption to understand all capabilities, tools, and patterns for interacting with Substack's undocumented API.
 
@@ -45,7 +45,7 @@ Optimized for **Option Shift's content engine** — daily ingestion of Substack 
 | Property | Value |
 |----------|-------|
 | Name | ss-navigator |
-| Version | 1.8.0 |
+| Version | 1.9.0 |
 | Protocol | MCP 2025-03-26 |
 | Transport | StreamableHTTP (production) or stdio (local) |
 | Language | Python 3.12+ |
@@ -927,6 +927,127 @@ Cancel a previously scheduled article publish.
 
 ---
 
+### Note Drafts + Scheduling + Following Suite (v1.9.0)
+
+Note draft creation, scheduling, listing, and cancellation, plus follow/unfollow/list-following on the social graph. Note-creation tools (`ss_create_note_draft`, `ss_schedule_note`) are voice-gated via `src/voice_check.py` with `force=True` bypass. All endpoints HAR-confirmed via `may2capture.har` (2026-05-02).
+
+#### 3.33 ss_create_note_draft — Create a Note Draft (Unscheduled)
+
+Create a Note draft without a publish/trigger time.
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| text | str | Yes | - | Note body text |
+| force | bool | No | False | Bypass voice check |
+
+**Endpoint:** `POST /api/v1/comment/draft` with body `{"bodyJson": <prosemirror>, "replyMinimumRole": "everyone"}`
+
+**Returns (success):**
+```json
+{"success": true, "id": 252827081, "trigger_at": null, "raw": {...}}
+```
+
+---
+
+#### 3.34 ss_schedule_note — Schedule a Note for Future Publish
+
+Create a Note draft with a `trigger_at` timestamp; Substack publishes automatically at that time.
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| text | str | Yes | - | Note body text |
+| trigger_at_iso | str | Yes | - | ISO-8601 UTC future timestamp (e.g. `2026-06-01T00:00:00.000Z`) |
+| force | bool | No | False | Bypass voice check |
+
+**Endpoint:** `POST /api/v1/comment/draft` with body `{"bodyJson": <prosemirror>, "replyMinimumRole": "everyone", "trigger_at": "<iso>"}`
+
+**Returns (success):**
+```json
+{"success": true, "id": 252827081, "trigger_at": "2026-06-01T00:00:00.000Z", "raw": {...}}
+```
+
+---
+
+#### 3.35 ss_list_note_drafts — List Note Drafts and Scheduled Notes
+
+List Note drafts plus scheduled notes. Filter by `trigger_at != null` to isolate scheduled.
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| limit | int | No | 20 | Max items |
+
+**Endpoint:** `GET /api/v1/feed/drafts?limit={N}`
+
+**Returns:** Raw API response. Typical: `{"drafts": [{"id": N, "trigger_at": null|"<iso>", ...}], "hasMore": bool, "nextCursor": ...}`.
+
+---
+
+#### 3.36 ss_cancel_scheduled_note — Cancel/Delete a Note Draft
+
+Cancel a scheduled Note or delete an unscheduled Note draft.
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| comment_id | str | Yes | - | Numeric comment/draft ID |
+
+**Endpoint:** `DELETE /api/v1/comment/{comment_id}`
+
+**Returns (success):**
+```json
+{"success": true, "comment_id": "252827081", "action": "deleted"}
+```
+
+---
+
+#### 3.37 ss_follow — Follow a User
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| user_id | str | Yes | - | Numeric user ID |
+
+**Endpoint:** `POST /api/v1/feed/{user_id}/follow` with body `{"surface": "profile"}`
+
+**Returns (success):**
+```json
+{"success": true, "user_id": "44606", "action": "followed"}
+```
+
+---
+
+#### 3.38 ss_unfollow — Unfollow a User
+
+**Parameters:**
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| user_id | str | Yes | - | Numeric user ID |
+
+**Endpoint:** `DELETE /api/v1/feed/{user_id}/follow` with body `{"surface": "profile"}`
+
+**Returns (success):**
+```json
+{"success": true, "user_id": "44606", "action": "unfollowed"}
+```
+
+---
+
+#### 3.39 ss_list_following — List Followed user_ids
+
+Returns the bare list of user_ids you follow.
+
+**Endpoint:** `GET /api/v1/feed/following`
+
+**Returns:**
+```json
+{"user_ids": [1, 2, 3]}
+```
+
+---
+
 ## 4. Business Logic & Constants
 
 ### 4.1 Dedup Logic
@@ -1187,6 +1308,13 @@ ss_update_draft         — Update fields on a draft (voice-gated)
 ss_publish_draft        — Publish a draft now
 ss_schedule_post        — Schedule a draft for a future date
 ss_unschedule_post      — Cancel a scheduled article publish
+ss_create_note_draft    — Create a Note draft (voice-gated)
+ss_schedule_note        — Schedule a Note for future publish (voice-gated)
+ss_list_note_drafts     — List Note drafts and scheduled notes
+ss_cancel_scheduled_note — Cancel a scheduled Note or delete a Note draft
+ss_follow               — Follow a user
+ss_unfollow             — Unfollow a user
+ss_list_following       — List user_ids you follow
 ```
 
 ### API Endpoints (All HAR-Verified)
@@ -1226,6 +1354,11 @@ DEL  {sub}.substack.com/api/v1/drafts/{draft_id}            Delete article draft
 POST {sub}.substack.com/api/v1/drafts                       Create article draft
 POST {sub}.substack.com/api/v1/drafts/{id}/publish          Publish draft now
 POST {sub}.substack.com/api/v1/drafts/{id}/schedule         Schedule (or unschedule with post_date=null)
+POST /api/v1/comment/draft                                  Create note draft (or schedule with trigger_at)
+GET  /api/v1/feed/drafts                                    List note drafts + scheduled notes
+POST /api/v1/feed/{user_id}/follow                          Follow a user
+DEL  /api/v1/feed/{user_id}/follow                          Unfollow a user
+GET  /api/v1/feed/following                                 List user_ids you follow
 ```
 
 ### Feed Response Format
@@ -1245,11 +1378,12 @@ Validate:   ss_auth_check (caches user_id)
 
 ---
 
-*Document Version: 1.8.0*
+*Document Version: 1.9.0*
 *Last Updated: May 2, 2026*
-*Compatible with: Substack MCP Server v1.8*
+*Compatible with: Substack MCP Server v1.9*
 
 ### Changelog
+- **1.9.0** (2026-05-02): Sprint 7 Batch 5 — 7 HAR-confirmed tools (note drafts + scheduling + follow). Sprint 7 complete.
 - **1.8.0** (2026-05-02): Sprint 7 Batch 4 — 8 article drafts + post scheduling tools (ss_list_drafts, ss_get_draft, ss_delete_draft, ss_create_draft, ss_update_draft, ss_publish_draft, ss_schedule_post, ss_unschedule_post). Subdomain-scoped via `auth.get_my_publication_subdomain()`. Voice gate on create/update.
 - **1.7.0** (2026-05-02): Sprint 7 Batch 3 — 9 Tier 1 write tools (publish_note, restack, unrestack, comment_on_post, get_post_comments, get_note_replies, react, delete, upload_image). Voice gate enforced via src/voice_check.py.
 - **1.6.0** (2026-05-02): Removed summarizer (Sprint 7 Batch 1). Dropped `google-genai` dependency, removed `summarize` param from all read tools. Feed tools now always return full markdown via `content` field. 19 tools total, 222 tests.
