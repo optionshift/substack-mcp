@@ -190,3 +190,51 @@ async def update_draft(draft_id: str, fields: dict, force: bool = False) -> dict
     if err:
         return err
     return {"success": True, "draft_id": draft_id, "raw": resp.json()}
+
+
+async def publish_draft(
+    draft_id: str,
+    send: bool = True,
+    share_automatically: bool = False,
+) -> dict:
+    sub, err = await _resolve_pub()
+    if err:
+        return err
+    url = f"https://{sub}.substack.com/api/v1/drafts/{draft_id}/publish"
+    resp, err = await _http_request(
+        "POST", url, json={"send": send, "share_automatically": share_automatically}
+    )
+    if err:
+        return err
+    err = _check_status(resp)
+    if err:
+        return err
+    return {"success": True, "draft_id": draft_id, "raw": resp.json()}
+
+
+async def schedule_post(draft_id: str, post_date_iso: str) -> dict:
+    sub, err = await _resolve_pub()
+    if err:
+        return err
+    url = f"https://{sub}.substack.com/api/v1/drafts/{draft_id}/schedule"
+    resp, err = await _http_request("POST", url, json={"post_date": post_date_iso})
+    if err:
+        return err
+    err = _check_status(resp)
+    if err:
+        return err
+    return {"success": True, "draft_id": draft_id, "scheduled_for": post_date_iso}
+
+
+async def unschedule_post(draft_id: str) -> dict:
+    sub, err = await _resolve_pub()
+    if err:
+        return err
+    url = f"https://{sub}.substack.com/api/v1/drafts/{draft_id}/schedule"
+    resp, err = await _http_request("POST", url, json={"post_date": None})
+    if err:
+        return err
+    err = _check_status(resp)
+    if err:
+        return err
+    return {"success": True, "draft_id": draft_id, "action": "unscheduled"}

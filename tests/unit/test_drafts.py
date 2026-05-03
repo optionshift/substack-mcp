@@ -252,6 +252,76 @@ class TestUpdateDraft:
         assert result["draft_id"] == "42"
 
 
+class TestPublishDraft:
+    @pytest.mark.asyncio
+    async def test_publish_success(self):
+        from src.tools.drafts import publish_draft
+
+        with patch("src.tools.drafts.get_client") as mock_gc, \
+             patch("src.tools.drafts.get_my_publication_subdomain", new=AsyncMock(return_value="lenny")):
+            mock_client = AsyncMock()
+            mock_client.get_cookies.return_value = {"substack.sid": "abc"}
+            mock_gc.return_value = mock_client
+
+            with patch("src.tools.drafts.httpx.AsyncClient") as mock_http_cls:
+                mock_http = AsyncMock()
+                mock_http.request.return_value = _make_response(data={"id": 42}, method="POST")
+                mock_http_cls.return_value.__aenter__.return_value = mock_http
+
+                result = await publish_draft(draft_id="42")
+        assert result["success"] is True
+        assert result["draft_id"] == "42"
+
+    @pytest.mark.asyncio
+    async def test_publish_no_publication(self):
+        from src.tools.drafts import publish_draft
+
+        with patch("src.tools.drafts.get_my_publication_subdomain", new=AsyncMock(return_value=None)):
+            result = await publish_draft(draft_id="42")
+        assert result["error"] is True
+        assert result["code"] == "AUTH_EXPIRED"
+
+
+class TestSchedulePost:
+    @pytest.mark.asyncio
+    async def test_schedule_success(self):
+        from src.tools.drafts import schedule_post
+
+        with patch("src.tools.drafts.get_client") as mock_gc, \
+             patch("src.tools.drafts.get_my_publication_subdomain", new=AsyncMock(return_value="lenny")):
+            mock_client = AsyncMock()
+            mock_client.get_cookies.return_value = {"substack.sid": "abc"}
+            mock_gc.return_value = mock_client
+
+            with patch("src.tools.drafts.httpx.AsyncClient") as mock_http_cls:
+                mock_http = AsyncMock()
+                mock_http.request.return_value = _make_response(method="POST")
+                mock_http_cls.return_value.__aenter__.return_value = mock_http
+
+                result = await schedule_post(draft_id="42", post_date_iso="2026-06-01T15:00:00Z")
+        assert result["success"] is True
+        assert result["scheduled_for"] == "2026-06-01T15:00:00Z"
+
+    @pytest.mark.asyncio
+    async def test_unschedule(self):
+        from src.tools.drafts import unschedule_post
+
+        with patch("src.tools.drafts.get_client") as mock_gc, \
+             patch("src.tools.drafts.get_my_publication_subdomain", new=AsyncMock(return_value="lenny")):
+            mock_client = AsyncMock()
+            mock_client.get_cookies.return_value = {"substack.sid": "abc"}
+            mock_gc.return_value = mock_client
+
+            with patch("src.tools.drafts.httpx.AsyncClient") as mock_http_cls:
+                mock_http = AsyncMock()
+                mock_http.request.return_value = _make_response(method="POST")
+                mock_http_cls.return_value.__aenter__.return_value = mock_http
+
+                result = await unschedule_post(draft_id="42")
+        assert result["success"] is True
+        assert result["action"] == "unscheduled"
+
+
 class TestDeleteDraft:
     @pytest.mark.asyncio
     async def test_delete_success(self):

@@ -14,6 +14,9 @@ from src.tools.drafts import (
     delete_draft,
     get_draft,
     list_drafts,
+    publish_draft,
+    schedule_post,
+    unschedule_post,
     update_draft,
 )
 from src.tools.like import like_content
@@ -332,6 +335,24 @@ async def ss_update_draft(draft_id: str, fields: dict, force: bool = False) -> d
     """Update fields on an existing article draft. Voice-checked when string fields change.
     Params: draft_id, fields (dict of allowed fields), force."""
     return await update_draft(draft_id=draft_id, fields=fields, force=force)
+
+
+@mcp.tool()
+async def ss_publish_draft(draft_id: str, send: bool = True, share_automatically: bool = False) -> dict:
+    """Publish an article draft now. Params: draft_id, send (email subscribers), share_automatically."""
+    return await publish_draft(draft_id=draft_id, send=send, share_automatically=share_automatically)
+
+
+@mcp.tool()
+async def ss_schedule_post(draft_id: str, post_date_iso: str) -> dict:
+    """Schedule an article draft for a future date. Params: draft_id, post_date_iso (ISO 8601 UTC)."""
+    return await schedule_post(draft_id=draft_id, post_date_iso=post_date_iso)
+
+
+@mcp.tool()
+async def ss_unschedule_post(draft_id: str) -> dict:
+    """Cancel a scheduled article publish. Params: draft_id."""
+    return await unschedule_post(draft_id=draft_id)
 
 
 # -- Health & transport --
