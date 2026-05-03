@@ -21,7 +21,7 @@ class TestLikePost:
         mock_client = AsyncMock()
         mock_client.post = AsyncMock(return_value=make_response(200, {}))
 
-        with patch("src.tools.like.get_client", return_value=mock_client):
+        with patch("src.tools.react.get_client", return_value=mock_client):
             result = await like_content(id="190215624", type="post")
 
         assert result["success"] is True
@@ -39,7 +39,7 @@ class TestLikePost:
         mock_client = AsyncMock()
         mock_client.post = AsyncMock(return_value=make_response(401))
 
-        with patch("src.tools.like.get_client", return_value=mock_client):
+        with patch("src.tools.react.get_client", return_value=mock_client):
             result = await like_content(id="190215624", type="post")
 
         assert result["error"] is True
@@ -52,7 +52,7 @@ class TestLikePost:
         mock_client = AsyncMock()
         mock_client.post = AsyncMock(return_value=make_response(500))
 
-        with patch("src.tools.like.get_client", return_value=mock_client):
+        with patch("src.tools.react.get_client", return_value=mock_client):
             result = await like_content(id="190215624", type="post")
 
         assert result["error"] is True
@@ -70,7 +70,7 @@ class TestLikeNote:
         mock_client = AsyncMock()
         mock_client.post = AsyncMock(return_value=make_response(200, {}))
 
-        with patch("src.tools.like.get_client", return_value=mock_client):
+        with patch("src.tools.react.get_client", return_value=mock_client):
             result = await like_content(id="224486083", type="note")
 
         assert result["success"] is True
@@ -88,7 +88,7 @@ class TestLikeNote:
         mock_client = AsyncMock()
         mock_client.post = AsyncMock(return_value=make_response(401))
 
-        with patch("src.tools.like.get_client", return_value=mock_client):
+        with patch("src.tools.react.get_client", return_value=mock_client):
             result = await like_content(id="224486083", type="note")
 
         assert result["error"] is True
@@ -114,7 +114,7 @@ class TestLikeEdgeCases:
         from src.tools.like import like_content
 
         mock_client = AsyncMock()
-        with patch("src.tools.like.get_client", return_value=mock_client):
+        with patch("src.tools.react.get_client", return_value=mock_client):
             result = await like_content(id="123", type="invalid")
 
         assert result["error"] is True
@@ -128,7 +128,7 @@ class TestLikeEdgeCases:
         mock_client = AsyncMock()
         mock_client.post = AsyncMock(side_effect=Exception("Connection refused"))
 
-        with patch("src.tools.like.get_client", return_value=mock_client):
+        with patch("src.tools.react.get_client", return_value=mock_client):
             result = await like_content(id="123", type="post")
 
         assert result["error"] is True

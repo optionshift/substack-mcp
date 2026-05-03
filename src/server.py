@@ -23,6 +23,7 @@ from src.tools.search_posts import search_posts
 from src.tools.search_trending import search_trending
 from src.tools.subscription_feed import get_subscription_feed
 from src.tools.publish_note import publish_note
+from src.tools.react import react
 from src.tools.restack import restack_content, unrestack_content
 from src.tools.save_post import save_post, unsave_post
 from src.tools.saved_posts import get_saved_posts
@@ -231,6 +232,13 @@ async def ss_unsave_post(post_id: str) -> dict:
 async def ss_like(id: str, type: str) -> dict:
     """Like/heart an article or note. type: 'post' or 'note'."""
     return await like_content(id=id, type=type)
+
+
+@mcp.tool()
+async def ss_react(target_id: str, kind: str, emoji: str = "❤") -> dict:
+    """React to a post or note with any emoji. Generalizes ss_like.
+    Params: target_id, kind ('post' or 'note'), emoji (default ❤)."""
+    return await react(target_id=target_id, kind=kind, emoji=emoji)
 
 
 @mcp.tool()
