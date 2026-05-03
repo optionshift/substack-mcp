@@ -193,6 +193,51 @@ class TestAuthCheck:
         assert "500" in result["message"]
 
 
+class TestGetMyPublicationSubdomain:
+    """Test get_my_publication_subdomain helper."""
+
+    @pytest.mark.asyncio
+    async def test_get_my_publication_subdomain(self):
+        from src.tools.auth import get_my_publication_subdomain
+
+        with patch("src.tools.auth.auth_check", new=AsyncMock(return_value={
+            "user_id": 1, "name": "x", "publications": [{"subdomain": "mileslozano"}]
+        })):
+            sub = await get_my_publication_subdomain()
+        assert sub == "mileslozano"
+
+    @pytest.mark.asyncio
+    async def test_get_my_publication_subdomain_none(self):
+        from src.tools.auth import get_my_publication_subdomain
+
+        with patch("src.tools.auth.auth_check", new=AsyncMock(return_value={
+            "user_id": 1, "name": "x", "publications": []
+        })):
+            sub = await get_my_publication_subdomain()
+        assert sub is None
+
+    @pytest.mark.asyncio
+    async def test_get_my_publication_subdomain_error(self):
+        from src.tools.auth import get_my_publication_subdomain
+
+        with patch("src.tools.auth.auth_check", new=AsyncMock(return_value={
+            "error": True, "code": "AUTH_EXPIRED", "message": "x", "retry_after": None,
+        })):
+            sub = await get_my_publication_subdomain()
+        assert sub is None
+
+    @pytest.mark.asyncio
+    async def test_get_my_publication_subdomain_skips_null_subdomain(self):
+        from src.tools.auth import get_my_publication_subdomain
+
+        with patch("src.tools.auth.auth_check", new=AsyncMock(return_value={
+            "user_id": 1, "name": "x",
+            "publications": [{"subdomain": None}, {"subdomain": "mileslozano"}],
+        })):
+            sub = await get_my_publication_subdomain()
+        assert sub == "mileslozano"
+
+
 class TestCreateClient:
     """Test create_client env var wiring."""
 

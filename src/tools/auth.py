@@ -74,5 +74,21 @@ async def auth_check() -> dict:
         "user_id": user_id,
         "name": data.get("name", ""),
         "email": data.get("email", ""),
+        "publications": data.get("publications", []),
         "expires_warning": False,
     }
+
+
+async def get_my_publication_subdomain() -> str | None:
+    """Return the user's primary publication subdomain (e.g., 'mileslozano') or None."""
+    result = await auth_check()
+    if result.get("error"):
+        return None
+    pubs = result.get("publications") or []
+    if not pubs:
+        return None
+    for pub in pubs:
+        sub = pub.get("subdomain")
+        if sub:
+            return sub
+    return None
