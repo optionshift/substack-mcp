@@ -94,7 +94,7 @@ async def get_post_content(
     article_id = f"substack_post_{data.get('id', '')}"
 
     # Dedup exception: does NOT skip, but DOES insert
-    is_new = cache.insert(
+    is_new = await cache.insert(
         article_id=article_id,
         url=data.get("canonical_url", url or ""),
         title=data.get("title", ""),

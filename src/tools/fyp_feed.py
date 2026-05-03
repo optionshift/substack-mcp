@@ -126,7 +126,7 @@ async def get_fyp_feed(
                 pass
 
         # Dedup: insert returns False if already exists
-        is_new = cache.insert(
+        is_new = await cache.insert(
             article_id=article_id,
             url=parsed["url"],
             title=parsed["title"],

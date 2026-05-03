@@ -96,7 +96,7 @@ class TestLikesFeed:
         from src.dedup import DedupCache
 
         cache = DedupCache(":memory:")
-        cache.insert("substack_post_4001", "url", "title", "source", "likes")
+        await cache.insert("substack_post_4001", "url", "title", "source", "likes")
 
         mock_response = httpx.Response(
             200,

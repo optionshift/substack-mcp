@@ -1,3 +1,4 @@
+import asyncio
 import os
 import sqlite3
 import threading
@@ -60,7 +61,7 @@ class DedupCache:
             (1, datetime.now(timezone.utc).isoformat()),
         )
 
-    def insert(self, article_id: str, url: str, title: str, source: str, source_feed: str) -> bool:
+    def _insert_sync(self, article_id: str, url: str, title: str, source: str, source_feed: str) -> bool:
         with self._lock:
             cursor = self.conn.execute(
                 "SELECT 1 FROM seen_articles WHERE id = ?", (article_id,)
@@ -75,17 +76,28 @@ class DedupCache:
             self.conn.commit()
             return True
 
-    def exists(self, article_id: str) -> bool:
+    async def insert(self, article_id: str, url: str, title: str, source: str, source_feed: str) -> bool:
+        return await asyncio.to_thread(
+            self._insert_sync, article_id, url, title, source, source_feed
+        )
+
+    def _exists_sync(self, article_id: str) -> bool:
         with self._lock:
             cursor = self.conn.execute(
                 "SELECT 1 FROM seen_articles WHERE id = ?", (article_id,)
             )
             return cursor.fetchone() is not None
 
-    def list_by_feed(self, source_feed: str) -> list[dict]:
+    async def exists(self, article_id: str) -> bool:
+        return await asyncio.to_thread(self._exists_sync, article_id)
+
+    def _list_by_feed_sync(self, source_feed: str) -> list[dict]:
         with self._lock:
             cursor = self.conn.execute(
                 "SELECT id, url, title, source, first_seen_at, source_feed FROM seen_articles WHERE source_feed = ?",
                 (source_feed,),
             )
             return [dict(row) for row in cursor.fetchall()]
+
+    async def list_by_feed(self, source_feed: str) -> list[dict]:
+        return await asyncio.to_thread(self._list_by_feed_sync, source_feed)

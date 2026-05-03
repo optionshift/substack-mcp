@@ -1,5 +1,4 @@
 import pytest
-from datetime import datetime, timezone
 
 
 SAMPLE_ARTICLE = {
@@ -14,11 +13,11 @@ SAMPLE_ARTICLE = {
 class TestDedupInsert:
     """Test inserting articles into dedup cache."""
 
-    def test_insert_new_article(self):
+    async def test_insert_new_article(self):
         from src.dedup import DedupCache
 
         cache = DedupCache(":memory:")
-        result = cache.insert(
+        result = await cache.insert(
             article_id=SAMPLE_ARTICLE["id"],
             url=SAMPLE_ARTICLE["url"],
             title=SAMPLE_ARTICLE["title"],
@@ -27,18 +26,18 @@ class TestDedupInsert:
         )
         assert result is True
 
-    def test_insert_duplicate_returns_false(self):
+    async def test_insert_duplicate_returns_false(self):
         from src.dedup import DedupCache
 
         cache = DedupCache(":memory:")
-        cache.insert(
+        await cache.insert(
             article_id=SAMPLE_ARTICLE["id"],
             url=SAMPLE_ARTICLE["url"],
             title=SAMPLE_ARTICLE["title"],
             source=SAMPLE_ARTICLE["source"],
             source_feed=SAMPLE_ARTICLE["source_feed"],
         )
-        result = cache.insert(
+        result = await cache.insert(
             article_id=SAMPLE_ARTICLE["id"],
             url=SAMPLE_ARTICLE["url"],
             title=SAMPLE_ARTICLE["title"],
@@ -51,45 +50,45 @@ class TestDedupInsert:
 class TestDedupLookup:
     """Test looking up articles in dedup cache."""
 
-    def test_lookup_existing_returns_true(self):
+    async def test_lookup_existing_returns_true(self):
         from src.dedup import DedupCache
 
         cache = DedupCache(":memory:")
-        cache.insert(
+        await cache.insert(
             article_id=SAMPLE_ARTICLE["id"],
             url=SAMPLE_ARTICLE["url"],
             title=SAMPLE_ARTICLE["title"],
             source=SAMPLE_ARTICLE["source"],
             source_feed=SAMPLE_ARTICLE["source_feed"],
         )
-        assert cache.exists(SAMPLE_ARTICLE["id"]) is True
+        assert await cache.exists(SAMPLE_ARTICLE["id"]) is True
 
-    def test_lookup_missing_returns_false(self):
+    async def test_lookup_missing_returns_false(self):
         from src.dedup import DedupCache
 
         cache = DedupCache(":memory:")
-        assert cache.exists("nonexistent_id") is False
+        assert await cache.exists("nonexistent_id") is False
 
 
 class TestDedupListByFeed:
     """Test listing articles by source feed."""
 
-    def test_list_by_source_feed(self):
+    async def test_list_by_source_feed(self):
         from src.dedup import DedupCache
 
         cache = DedupCache(":memory:")
-        cache.insert("id1", "url1", "title1", "source1", "fyp")
-        cache.insert("id2", "url2", "title2", "source2", "subscription")
-        cache.insert("id3", "url3", "title3", "source3", "fyp")
+        await cache.insert("id1", "url1", "title1", "source1", "fyp")
+        await cache.insert("id2", "url2", "title2", "source2", "subscription")
+        await cache.insert("id3", "url3", "title3", "source3", "fyp")
 
-        fyp_articles = cache.list_by_feed("fyp")
+        fyp_articles = await cache.list_by_feed("fyp")
         assert len(fyp_articles) == 2
 
-    def test_list_empty_feed(self):
+    async def test_list_empty_feed(self):
         from src.dedup import DedupCache
 
         cache = DedupCache(":memory:")
-        assert cache.list_by_feed("fyp") == []
+        assert await cache.list_by_feed("fyp") == []
 
 
 class TestDedupMigration:
@@ -150,11 +149,11 @@ class TestDedupMigration:
         assert row is not None
         assert row[0] == 1
 
-    def test_article_has_first_seen_timestamp(self):
+    async def test_article_has_first_seen_timestamp(self):
         from src.dedup import DedupCache
 
         cache = DedupCache(":memory:")
-        cache.insert(
+        await cache.insert(
             article_id="ts_test",
             url="url",
             title="title",

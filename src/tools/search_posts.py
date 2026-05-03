@@ -104,7 +104,7 @@ async def search_posts(
         article_id = f"substack_post_{result.get('id', '')}"
 
         # Dedup: insert but do NOT skip (same as post_content — search should always return)
-        is_new = cache.insert(
+        is_new = await cache.insert(
             article_id=article_id,
             url=result.get("canonical_url", ""),
             title=result.get("title", ""),

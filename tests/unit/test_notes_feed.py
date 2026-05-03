@@ -152,7 +152,7 @@ class TestNotesFeedDedup:
         from src.dedup import DedupCache
 
         cache = DedupCache(":memory:")
-        cache.insert("substack_note_6001", "url", "title", "source", "notes")
+        await cache.insert("substack_note_6001", "url", "title", "source", "notes")
 
         mock_response = httpx.Response(
             200,

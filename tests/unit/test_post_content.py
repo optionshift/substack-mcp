@@ -100,7 +100,7 @@ class TestPostContentDedup:
 
             await get_post_content(url="https://aiweekly.substack.com/p/deep-dive-ai")
 
-        assert cache.exists("substack_post_3001")
+        assert await cache.exists("substack_post_3001")
 
     @pytest.mark.asyncio
     async def test_does_not_skip_existing(self):
@@ -109,7 +109,7 @@ class TestPostContentDedup:
 
         cache = DedupCache(":memory:")
         # Pre-insert as seen
-        cache.insert("substack_post_3001", "url", "title", "source", "fyp")
+        await cache.insert("substack_post_3001", "url", "title", "source", "fyp")
 
         mock_response = httpx.Response(
             200,

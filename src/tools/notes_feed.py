@@ -100,7 +100,7 @@ async def get_notes_feed(
             except ValueError:
                 pass
 
-        is_new = cache.insert(
+        is_new = await cache.insert(
             article_id=article_id,
             url="",
             title=comment.get("body", "")[:100],

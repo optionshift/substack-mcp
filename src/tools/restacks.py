@@ -142,7 +142,7 @@ async def get_restacks(
             except ValueError:
                 pass
 
-        is_new = cache.insert(
+        is_new = await cache.insert(
             article_id=article_id,
             url=parsed["url"],
             title=parsed["title"],

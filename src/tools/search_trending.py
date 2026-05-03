@@ -84,7 +84,7 @@ async def search_trending(
         article_id = f"substack_post_{post.get('id', '')}"
 
         # Dedup: insert but do NOT skip — search should always return all results
-        is_new = cache.insert(
+        is_new = await cache.insert(
             article_id=article_id,
             url=post.get("canonical_url", ""),
             title=post.get("title", ""),

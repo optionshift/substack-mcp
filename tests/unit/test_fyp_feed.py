@@ -138,7 +138,7 @@ class TestFYPFeedDedup:
 
         cache = DedupCache(":memory:")
         # Pre-insert first article as seen
-        cache.insert("substack_post_1001", "url", "title", "source", "fyp")
+        await cache.insert("substack_post_1001", "url", "title", "source", "fyp")
 
         mock_response = httpx.Response(
             200,
@@ -177,8 +177,8 @@ class TestFYPFeedDedup:
 
             await get_fyp_feed()
 
-        assert cache.exists("substack_post_1001")
-        assert cache.exists("substack_post_1002")
+        assert await cache.exists("substack_post_1001")
+        assert await cache.exists("substack_post_1002")
 
 
 class TestFYPFeedSinceFilter:

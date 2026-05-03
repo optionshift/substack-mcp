@@ -173,7 +173,7 @@ class TestSubscriptionFeedRSSFallback:
 
         # All articles should be in cache now
         for article in result:
-            assert cache.exists(article["id"])
+            assert await cache.exists(article["id"])
 
 
 class TestSubscriptionFeedSinceFilter:

@@ -140,7 +140,7 @@ async def _fetch_via_rss(
                 except ValueError:
                     pass
 
-            is_new = cache.insert(
+            is_new = await cache.insert(
                 article_id=article_id,
                 url=parsed["url"],
                 title=parsed["title"],
@@ -228,7 +228,7 @@ async def get_subscription_feed(
             except ValueError:
                 pass
 
-        is_new = cache.insert(
+        is_new = await cache.insert(
             article_id=article_id,
             url=parsed["url"],
             title=parsed["title"],

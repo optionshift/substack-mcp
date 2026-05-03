@@ -229,7 +229,7 @@ class TestGetSavedPosts:
         from src.dedup import DedupCache
 
         cache = DedupCache(":memory:")
-        cache.insert("substack_post_162633402", "url", "title", "source", "saved")
+        await cache.insert("substack_post_162633402", "url", "title", "source", "saved")
 
         with patch("src.tools.saved_posts.get_client") as mock_gc, \
              patch("src.tools.saved_posts.get_cache", return_value=cache):

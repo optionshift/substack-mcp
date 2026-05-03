@@ -130,7 +130,7 @@ async def get_saved_posts(
         url = post.get("canonical_url", "")
 
         # Dedup: insert but don't skip (saved posts always returned)
-        is_new = cache.insert(
+        is_new = await cache.insert(
             article_id=article_id,
             url=url,
             title=post.get("title", ""),

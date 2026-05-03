@@ -144,7 +144,7 @@ class TestSearchPostsBasic:
 
         cache = DedupCache(":memory:")
         # Pre-insert first article
-        cache.insert("substack_post_189918781", "url", "title", "source", "fyp")
+        await cache.insert("substack_post_189918781", "url", "title", "source", "fyp")
 
         mock_response = httpx.Response(
             200,

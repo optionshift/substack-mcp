@@ -210,7 +210,7 @@ class TestSearchTrendingBasic:
         from src.dedup import DedupCache
 
         cache = DedupCache(":memory:")
-        cache.insert("substack_post_191041024", "url", "title", "source", "fyp")
+        await cache.insert("substack_post_191041024", "url", "title", "source", "fyp")
 
         mock_response = httpx.Response(
             200,

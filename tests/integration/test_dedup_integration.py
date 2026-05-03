@@ -1,9 +1,13 @@
-import pytest
 import threading
 
 
 class TestDedupConcurrentAccess:
-    """Test dedup cache handles concurrent access."""
+    """Test dedup cache handles concurrent access from multiple threads.
+
+    These tests exercise the underlying sync sqlite path (which the async
+    wrappers delegate to via asyncio.to_thread), so we call the _sync
+    methods directly here.
+    """
 
     def test_concurrent_inserts_no_duplicates(self):
         from src.dedup import DedupCache
@@ -12,7 +16,9 @@ class TestDedupConcurrentAccess:
         results = []
 
         def insert_article(article_id):
-            result = cache.insert(article_id, f"url_{article_id}", f"title_{article_id}", "source", "fyp")
+            result = cache._insert_sync(
+                article_id, f"url_{article_id}", f"title_{article_id}", "source", "fyp"
+            )
             results.append((article_id, result))
 
         threads = []
@@ -35,7 +41,7 @@ class TestDedupConcurrentAccess:
         results = []
 
         def insert_same_article():
-            result = cache.insert("same_id", "url", "title", "source", "fyp")
+            result = cache._insert_sync("same_id", "url", "title", "source", "fyp")
             results.append(result)
 
         threads = []
@@ -55,17 +61,17 @@ class TestDedupConcurrentAccess:
 class TestDedupPersistence:
     """Test dedup cache data persistence within a session."""
 
-    def test_data_persists_across_operations(self):
+    async def test_data_persists_across_operations(self):
         from src.dedup import DedupCache
 
         cache = DedupCache(":memory:")
-        cache.insert("persist_1", "url1", "title1", "source1", "fyp")
-        cache.insert("persist_2", "url2", "title2", "source2", "subscription")
+        await cache.insert("persist_1", "url1", "title1", "source1", "fyp")
+        await cache.insert("persist_2", "url2", "title2", "source2", "subscription")
 
-        assert cache.exists("persist_1") is True
-        assert cache.exists("persist_2") is True
-        assert cache.exists("persist_3") is False
+        assert await cache.exists("persist_1") is True
+        assert await cache.exists("persist_2") is True
+        assert await cache.exists("persist_3") is False
 
-        articles = cache.list_by_feed("fyp")
+        articles = await cache.list_by_feed("fyp")
         assert len(articles) == 1
         assert articles[0]["id"] == "persist_1"

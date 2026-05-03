@@ -95,7 +95,7 @@ class TestRestacksFeed:
         from src.dedup import DedupCache
 
         cache = DedupCache(":memory:")
-        cache.insert("substack_post_5001", "url", "title", "source", "restacks")
+        await cache.insert("substack_post_5001", "url", "title", "source", "restacks")
 
         mock_response = httpx.Response(
             200,
