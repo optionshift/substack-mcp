@@ -134,6 +134,54 @@ WORKFLOWS = [
     },
 ]
 
+GROWTH_PLAYBOOK = {
+    "algorithm_weights": {
+        "highest": ["restacks", "replies-on-others"],
+        "medium": ["shares", "saves"],
+        "low": ["likes"],
+        "note": "Substack ML head Mike Cohen has confirmed restacks are the dominant signal. Engagement on others' work outweighs your own posting volume.",
+    },
+    "note_format": {
+        "length_words": "64-255",
+        "structure": "4-6 short paragraphs with whitespace",
+        "hook_first_words": "7-10",
+        "hook_pattern": "specific claim, unexpected stat, or identity statement",
+        "best_windows_et": ["Tue-Thu 8-10 AM", "Tue-Thu 2-4 PM"],
+        "first_4_hours": "decide reach; if no early traction, the note is dead",
+    },
+    "restack_pattern": {
+        "rule": "restack-with-comment beats naked restack for your visibility",
+        "naked_restack": "promotes original author only",
+        "quote_restack": "highlight one sentence; works for any article including your own",
+        "tip": "@-mention the author when restacking with comment so they get notified",
+    },
+    "article_amplification_7d": [
+        "Day 0: announce note linking the post",
+        "Day 1: quote-restack the strongest single sentence",
+        "Day 2: standalone note with one chart/stat from the piece (no link)",
+        "Day 3: 'thing I almost cut' as standalone note",
+        "Day 4: reply to a related note from a peer, citing your article",
+        "Day 5: 'tiny tutorial' note teaching one concrete thing",
+        "Day 6: behind-the-scenes / how-I-wrote-it note",
+        "Day 7: contrarian framing note that links back",
+    ],
+    "free_to_paid": {
+        "honest_median": "~3% (not the 5-10% Substack markets)",
+        "lifts": ["paywalled chat replies", "paid-only sections", "email automations (rolling out 2026)"],
+    },
+    "recommendations": {
+        "share_of_new_subs_2026": "~40%",
+        "tactic": "swap recommendations with peers at similar size/niche; high-ROI compounding",
+    },
+    "voice_rules_per_format": {
+        "x_twitter": "ALL lowercase except proper nouns; 1-2 sentences; no em-dashes/emoji/hashtags",
+        "substack_notes": "sentence case; 2-3 sentences; best stuff under 10 words",
+        "banned_words": ["leverage", "synergy", "ensure", "revolutionary", "crucial", "delve", "foster", "comprehensive", "however", "essentially", "literally"],
+        "hard_ban_chars": ["em dash —", "semicolon ;", "colon : (except 'Word: value' label)"],
+        "ai_pattern_phrases": ["not because X. because Y.", "here's the thing", "let that sink in", "the real X isn't Y", "unpopular opinion", "hot take"],
+    },
+}
+
 AUTH_ROTATION = {
     "description": "How to rotate the Substack session cookie when it expires.",
     "steps": [
@@ -154,6 +202,7 @@ def get_navigator() -> dict:
         "description": "Substack Content Navigator MCP Server. Start with ss_auth_check, then use feed tools for content ingestion.",
         "tools": TOOLS,
         "workflows": WORKFLOWS,
+        "growth_playbook": GROWTH_PLAYBOOK,
         "auth_rotation": AUTH_ROTATION,
         "api_quirks": [
             "Substack has no official API — all endpoints are undocumented and may change.",

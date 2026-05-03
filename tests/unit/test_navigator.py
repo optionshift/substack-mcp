@@ -93,3 +93,19 @@ class TestNavigatorWorkflows:
         result = get_navigator()
         workflows = result["workflows"]
         assert any("draft" in str(w).lower() for w in workflows)
+
+
+@pytest.mark.asyncio
+async def test_navigator_includes_growth_playbook():
+    from src.tools.navigator import get_navigator
+    import asyncio as _asyncio
+
+    fn = get_navigator
+    if _asyncio.iscoroutinefunction(fn):
+        result = await fn()
+    else:
+        result = fn()
+    assert "growth_playbook" in result
+    assert "algorithm_weights" in result["growth_playbook"]
+    assert "article_amplification_7d" in result["growth_playbook"]
+    assert "voice_rules_per_format" in result["growth_playbook"]
