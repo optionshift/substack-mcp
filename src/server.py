@@ -7,6 +7,7 @@ from starlette.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from src.tools.auth import auth_check
 from src.tools.activity_feed import get_activity_feed
+from src.tools.comment_on_post import comment_on_post, get_post_comments
 from src.tools.like import like_content
 from src.tools.fyp_feed import get_fyp_feed
 from src.tools.navigator import get_navigator
@@ -249,6 +250,19 @@ async def ss_restack(target_id: str, kind: str, quote_text: str | None = None, f
 async def ss_unrestack(target_id: str, kind: str) -> dict:
     """Remove a restack. Params: target_id, kind ('post' or 'note')."""
     return await unrestack_content(target_id=target_id, kind=kind)
+
+
+@mcp.tool()
+async def ss_comment_on_post(post_id: str, text: str, parent_id: str | None = None, force: bool = False) -> dict:
+    """Post a comment on a Substack article. Voice-checked. Optionally reply to a parent comment.
+    Params: post_id, text, parent_id (optional), force (bypass voice check)."""
+    return await comment_on_post(post_id=post_id, text=text, parent_id=parent_id, force=force)
+
+
+@mcp.tool()
+async def ss_get_post_comments(post_id: str, sort: str = "best_first") -> dict:
+    """Get the comment tree on a Substack article. Params: post_id, sort ('best_first' default)."""
+    return await get_post_comments(post_id=post_id, sort=sort)
 
 
 # -- Health & transport --
